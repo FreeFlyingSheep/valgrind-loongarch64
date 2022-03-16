@@ -232,6 +232,639 @@ VexGuestLayout loongarch64Guest_layout = {
 };
 
 
+/*-----------------------------------------------------------*/
+/*--- loongarch64 guest helpers                           ---*/
+/*-----------------------------------------------------------*/
+
+/* Claim to be the following CPU, which is probably representative of
+   the earliest loongarch64 offerings.
+
+   CPU Family          : Loongson-64bit
+   Model Name          : Loongson-3A5000LL
+   CPU Revision        : 0x10
+   FPU Revision        : 0x00
+   CPU MHz             : 2300.00
+   BogoMIPS            : 4600.00
+   TLB Entries         : 2112
+   Address Sizes       : 48 bits physical, 48 bits virtual
+   ISA                 : loongarch32 loongarch64
+   Features            : cpucfg lam ual fpu lsx lasx complex crypto lvz
+   Hardware Watchpoint : yes, iwatch count: 8, dwatch count: 8
+*/
+ULong loongarch64_calculate_cpucfg ( ULong src )
+{
+   ULong res;
+   switch (src) {
+      case 0x0:
+         res = 0x0014c010;
+         break;
+      case 0x1:
+         res = 0x03f2f2fe;
+         break;
+      case 0x2:
+         res = 0x007ccfc7;
+         break;
+      case 0x3:
+         res = 0x0000fcff;
+         break;
+      case 0x4:
+         res = 0x05f5e100;
+         break;
+      case 0x5:
+         res = 0x00010001;
+         break;
+      case 0x6:
+         res = 0x00007f33;
+         break;
+      case 0x10:
+         res = 0x00002c3d;
+         break;
+      case 0x11:
+         res = 0x06080003;
+         break;
+      case 0x12:
+         res = 0x06080003;
+         break;
+      case 0x13:
+         res = 0x0608000f;
+         break;
+      case 0x14:
+         res = 0x060e000f;
+         break;
+      default:
+         res = 0x00000000;
+         break;
+   }
+   return (ULong)(Long)(Int)res;
+}
+
+static void swap_UChar ( UChar* a, UChar* b )
+{
+   UChar t = *a;
+   *a = *b;
+   *b = t;
+}
+
+ULong loongarch64_calculate_revb_2h ( ULong src )
+{
+   UChar* s = (UChar*)&src;
+   swap_UChar(&s[0], &s[1]);
+   swap_UChar(&s[2], &s[3]);
+   return (ULong)(Long)(Int)src;
+}
+
+ULong loongarch64_calculate_revb_4h ( ULong src )
+{
+   UChar* s = (UChar*)&src;
+   swap_UChar(&s[0], &s[1]);
+   swap_UChar(&s[2], &s[3]);
+   swap_UChar(&s[4], &s[5]);
+   swap_UChar(&s[6], &s[7]);
+   return src;
+}
+
+ULong loongarch64_calculate_revb_2w ( ULong src )
+{
+   UChar* s = (UChar*)&src;
+   swap_UChar(&s[0], &s[3]);
+   swap_UChar(&s[1], &s[2]);
+   swap_UChar(&s[4], &s[7]);
+   swap_UChar(&s[5], &s[6]);
+   return src;
+}
+
+ULong loongarch64_calculate_revb_d ( ULong src )
+{
+   UChar* s = (UChar*)&src;
+   swap_UChar(&s[0], &s[7]);
+   swap_UChar(&s[1], &s[6]);
+   swap_UChar(&s[2], &s[5]);
+   swap_UChar(&s[3], &s[4]);
+   return src;
+}
+
+static void swap_UShort ( UShort* a, UShort* b )
+{
+   UShort t = *a;
+   *a = *b;
+   *b = t;
+}
+
+ULong loongarch64_calculate_revh_2w ( ULong src )
+{
+   UShort* s = (UShort*)&src;
+   swap_UShort(&s[0], &s[1]);
+   swap_UShort(&s[2], &s[3]);
+   return src;
+}
+
+ULong loongarch64_calculate_revh_d ( ULong src )
+{
+   UShort* s = (UShort*)&src;
+   swap_UShort(&s[0], &s[3]);
+   swap_UShort(&s[1], &s[2]);
+   return src;
+}
+
+static ULong bitrev ( ULong src, ULong start, ULong end )
+{
+   int i, j;
+   ULong res = 0;
+   for (i = start, j = 1; i < end; i++, j++)
+      res |= ((src >> i) & 1) << (end - j);
+   return res;
+}
+
+ULong loongarch64_calculate_bitrev_4b ( ULong src )
+{
+   ULong res = bitrev(src, 0, 8);
+   res |= bitrev(src, 8, 16);
+   res |= bitrev(src, 16, 24);
+   res |= bitrev(src, 24, 32);
+   return (ULong)(Long)(Int)res;
+}
+
+ULong loongarch64_calculate_bitrev_8b ( ULong src )
+{
+   ULong res = bitrev(src, 0, 8);
+   res |= bitrev(src, 8, 16);
+   res |= bitrev(src, 16, 24);
+   res |= bitrev(src, 24, 32);
+   res |= bitrev(src, 32, 40);
+   res |= bitrev(src, 40, 48);
+   res |= bitrev(src, 48, 56);
+   res |= bitrev(src, 56, 64);
+   return res;
+}
+
+ULong loongarch64_calculate_bitrev_w ( ULong src )
+{
+   ULong res = bitrev(src, 0, 32);
+   return (ULong)(Long)(Int)res;
+}
+
+ULong loongarch64_calculate_bitrev_d ( ULong src )
+{
+   return bitrev(src, 0, 64);
+}
+
+static ULong crc32 ( ULong old, ULong msg, ULong width, ULong poly )
+{
+   int i;
+   ULong new;
+   if (width == 8)
+      msg &= 0xff;
+   else if (width == 16)
+      msg &= 0xffff;
+   else if (width == 32)
+      msg &= 0xffffffff;
+   new = (old & 0xffffffff) ^ msg;
+   for (i = 0; i < width; i++) {
+      if (new & 1)
+         new = (new >> 1) ^ poly;
+      else
+         new >>= 1;
+   }
+   return new;
+}
+
+ULong loongarch64_calculate_crc ( ULong old, ULong msg, ULong len )
+{
+   ULong res = crc32(old, msg, len, 0xedb88320);
+   return (ULong)(Long)(Int)res;
+}
+
+ULong loongarch64_calculate_crcc ( ULong old, ULong msg, ULong len )
+{
+   ULong res = crc32(old, msg, len, 0x82f63b78);
+   return (ULong)(Long)(Int)res;
+}
+
+ULong loongarch64_calculate_fclass_s ( ULong src )
+{
+   UInt f = src;
+   Bool sign = toBool(f >> 31);
+   if ((f & 0x7fffffff) == 0x7f800000) {
+      return sign ? 1 << 2 : 1 << 6;
+   } else if ((f & 0x7fffffff) == 0) {
+      return sign ? 1 << 5 : 1 << 9;
+   } else if ((f & 0x7f800000) == 0) {
+      return sign ? 1 << 4 : 1 << 8;
+   } else if ((f & ~(1 << 31)) > 0x7f800000) {
+      return ((UInt)(f << 1) >= 0xff800000) ? 1 << 1 : 1 << 0;
+   } else {
+      return sign ? 1 << 3 : 1 << 7;
+   }
+}
+
+ULong loongarch64_calculate_fclass_d ( ULong src )
+{
+   ULong f = src;
+   Bool sign = toBool(f >> 63);
+   if ((f & 0x7fffffffffffffffULL) == 0x7ff0000000000000ULL) {
+      return sign ? 1 << 2 : 1 << 6;
+   } else if ((f & 0x7fffffffffffffffULL) == 0) {
+      return sign ? 1 << 5 : 1 << 9;
+   } else if ((f & 0x7ff0000000000000ULL) == 0) {
+      return sign ? 1 << 4 : 1 << 8;
+   } else if ((f & ~(1ULL << 63)) > 0x7ff0000000000000ULL) {
+      return ((f << 1) >= 0xfff0000000000000ULL) ? 1 << 1 : 1 << 0;
+   } else {
+      return sign ? 1 << 3 : 1 << 7;
+   }
+}
+
+#if defined(__loongarch__)
+#define ASM_VOLATILE_UNARY(inst)                         \
+   __asm__ volatile("movfcsr2gr $s0, $r0         \n\t"   \
+                    "movgr2fcsr $r2, $zero       \n\t"   \
+                    #inst"      $f24, %1         \n\t"   \
+                    "movfcsr2gr %0, $r2          \n\t"   \
+                    "movgr2fcsr $r0, $s0         \n\t"   \
+                    : "=r" (fcsr2)                       \
+                    : "f" (src1)                         \
+                    : "$s0", "$f24"                      \
+                   )
+
+#define ASM_VOLATILE_BINARY(inst)                        \
+   __asm__ volatile("movfcsr2gr $s0, $r0         \n\t"   \
+                    "movgr2fcsr $r2, $zero       \n\t"   \
+                    #inst"      $f24, %1, %2     \n\t"   \
+                    "movfcsr2gr %0, $r2          \n\t"   \
+                    "movgr2fcsr $r0, $s0         \n\t"   \
+                    : "=r" (fcsr2)                       \
+                    : "f" (src1), "f" (src2)             \
+                    : "$s0", "$f24"                      \
+                   )
+
+#define ASM_VOLATILE_TRINARY(inst)                       \
+   __asm__ volatile("movfcsr2gr $s0, $r0         \n\t"   \
+                    "movgr2fcsr $r2, $zero       \n\t"   \
+                    #inst"      $f24, %1, %2, %3 \n\t"   \
+                    "movfcsr2gr %0, $r2          \n\t"   \
+                    "movgr2fcsr $r0, $s0         \n\t"   \
+                    : "=r" (fcsr2)                       \
+                    : "f" (src1), "f" (src2), "f" (src3) \
+                    : "$s0", "$f24"                      \
+                   )
+
+#define ASM_VOLATILE_FCMP(inst)                          \
+   __asm__ volatile("movfcsr2gr $s0, $r0         \n\t"   \
+                    "movgr2fcsr $r2, $zero       \n\t"   \
+                    #inst"      $fcc0, %1, %2    \n\t"   \
+                    "movfcsr2gr %0, $r0          \n\t"   \
+                    "movgr2fcsr $r0, $s0         \n\t"   \
+                    : "=r" (fcsr2)                       \
+                    : "f" (src1), "f" (src2)             \
+                    : "$s0", "$fcc0"                     \
+                   )
+#endif
+
+/* Calculate FCSR and return whether an exception needs to be thrown */
+ULong loongarch64_calculate_FCSR ( enum fpop op, ULong src1,
+                                   ULong src2, ULong src3 )
+{
+   UInt fcsr2 = 0;
+#if defined(__loongarch__)
+   switch (op) {
+      case FADD_S:
+         ASM_VOLATILE_BINARY(fadd.s);
+         break;
+      case FADD_D:
+         ASM_VOLATILE_BINARY(fadd.d);
+         break;
+      case FSUB_S:
+         ASM_VOLATILE_BINARY(fsub.s);
+         break;
+      case FSUB_D:
+         ASM_VOLATILE_BINARY(fsub.d);
+         break;
+      case FMUL_S:
+         ASM_VOLATILE_BINARY(fmul.s);
+         break;
+      case FMUL_D:
+         ASM_VOLATILE_BINARY(fmul.d);
+         break;
+      case FDIV_S:
+         ASM_VOLATILE_BINARY(fdiv.s);
+         break;
+      case FDIV_D:
+         ASM_VOLATILE_BINARY(fdiv.d);
+         break;
+      case FMADD_S:
+         ASM_VOLATILE_TRINARY(fmadd.s);
+         break;
+      case FMADD_D:
+         ASM_VOLATILE_TRINARY(fmadd.d);
+         break;
+      case FMSUB_S:
+         ASM_VOLATILE_TRINARY(fmsub.s);
+         break;
+      case FMSUB_D:
+         ASM_VOLATILE_TRINARY(fmsub.d);
+         break;
+      case FNMADD_S:
+         ASM_VOLATILE_TRINARY(fnmadd.s);
+         break;
+      case FNMADD_D:
+         ASM_VOLATILE_TRINARY(fnmadd.d);
+         break;
+      case FNMSUB_S:
+         ASM_VOLATILE_TRINARY(fnmsub.s);
+         break;
+      case FNMSUB_D:
+         ASM_VOLATILE_TRINARY(fnmsub.s);
+         break;
+      case FMAX_S:
+         ASM_VOLATILE_BINARY(fmax.s);
+         break;
+      case FMAX_D:
+         ASM_VOLATILE_BINARY(fmax.d);
+         break;
+      case FMIN_S:
+         ASM_VOLATILE_BINARY(fmin.s);
+         break;
+      case FMIN_D:
+         ASM_VOLATILE_BINARY(fmin.d);
+         break;
+      case FMAXA_S:
+         ASM_VOLATILE_BINARY(fmaxa.s);
+         break;
+      case FMAXA_D:
+         ASM_VOLATILE_BINARY(fmaxa.d);
+         break;
+      case FMINA_S:
+         ASM_VOLATILE_BINARY(fmina.s);
+         break;
+      case FMINA_D:
+         ASM_VOLATILE_BINARY(fmina.s);
+         break;
+      case FABS_S:
+         ASM_VOLATILE_UNARY(fabs.s);
+         break;
+      case FABS_D:
+         ASM_VOLATILE_UNARY(fabs.d);
+         break;
+      case FNEG_S:
+         ASM_VOLATILE_UNARY(fneg.s);
+         break;
+      case FNEG_D:
+         ASM_VOLATILE_UNARY(fneg.d);
+         break;
+      case FSQRT_S:
+         ASM_VOLATILE_UNARY(fsqrt.s);
+         break;
+      case FSQRT_D:
+         ASM_VOLATILE_UNARY(fsqrt.d);
+         break;
+      case FRECIP_S:
+         ASM_VOLATILE_UNARY(frecip.s);
+         break;
+      case FRECIP_D:
+         ASM_VOLATILE_UNARY(frecip.d);
+         break;
+      case FRSQRT_S:
+         ASM_VOLATILE_UNARY(frsqrt.s);
+         break;
+      case FRSQRT_D:
+         ASM_VOLATILE_UNARY(frsqrt.d);
+         break;
+      case FSCALEB_S:
+         ASM_VOLATILE_BINARY(fscaleb.s);
+         break;
+      case FSCALEB_D:
+         ASM_VOLATILE_BINARY(fscaleb.d);
+         break;
+      case FLOGB_S:
+         ASM_VOLATILE_UNARY(flogb.s);
+         break;
+      case FLOGB_D:
+         ASM_VOLATILE_UNARY(flogb.d);
+         break;
+      case FCMP_CAF_S:
+         ASM_VOLATILE_FCMP(fcmp.caf.s);
+         break;
+      case FCMP_CAF_D:
+         ASM_VOLATILE_FCMP(fcmp.caf.d);
+         break;
+      case FCMP_SAF_S:
+         ASM_VOLATILE_FCMP(fcmp.saf.s);
+         break;
+      case FCMP_SAF_D:
+         ASM_VOLATILE_FCMP(fcmp.saf.d);
+         break;
+      case FCMP_CLT_S:
+         ASM_VOLATILE_FCMP(fcmp.clt.s);
+         break;
+      case FCMP_CLT_D:
+         ASM_VOLATILE_FCMP(fcmp.clt.d);
+         break;
+      case FCMP_SLT_S:
+         ASM_VOLATILE_FCMP(fcmp.slt.s);
+         break;
+      case FCMP_SLT_D:
+         ASM_VOLATILE_FCMP(fcmp.slt.d);
+         break;
+      case FCMP_CEQ_S:
+         ASM_VOLATILE_FCMP(fcmp.ceq.s);
+         break;
+      case FCMP_CEQ_D:
+         ASM_VOLATILE_FCMP(fcmp.ceq.d);
+         break;
+      case FCMP_SEQ_S:
+         ASM_VOLATILE_FCMP(fcmp.seq.s);
+         break;
+      case FCMP_SEQ_D:
+         ASM_VOLATILE_FCMP(fcmp.seq.d);
+         break;
+      case FCMP_CLE_S:
+         ASM_VOLATILE_FCMP(fcmp.cle.s);
+         break;
+      case FCMP_CLE_D:
+         ASM_VOLATILE_FCMP(fcmp.cle.d);
+         break;
+      case FCMP_SLE_S:
+         ASM_VOLATILE_FCMP(fcmp.sle.s);
+         break;
+      case FCMP_SLE_D:
+         ASM_VOLATILE_FCMP(fcmp.sle.d);
+         break;
+      case FCMP_CUN_S:
+         ASM_VOLATILE_FCMP(fcmp.cun.s);
+         break;
+      case FCMP_CUN_D:
+         ASM_VOLATILE_FCMP(fcmp.cun.d);
+         break;
+      case FCMP_SUN_S:
+         ASM_VOLATILE_FCMP(fcmp.sun.s);
+         break;
+      case FCMP_SUN_D:
+         ASM_VOLATILE_FCMP(fcmp.sun.d);
+         break;
+      case FCMP_CULT_S:
+         ASM_VOLATILE_FCMP(fcmp.cult.s);
+         break;
+      case FCMP_CULT_D:
+         ASM_VOLATILE_FCMP(fcmp.cult.d);
+         break;
+      case FCMP_SULT_S:
+         ASM_VOLATILE_FCMP(fcmp.sult.s);
+         break;
+      case FCMP_SULT_D:
+         ASM_VOLATILE_FCMP(fcmp.sult.d);
+         break;
+      case FCMP_CUEQ_S:
+         ASM_VOLATILE_FCMP(fcmp.cueq.s);
+         break;
+      case FCMP_CUEQ_D:
+         ASM_VOLATILE_FCMP(fcmp.cueq.d);
+         break;
+      case FCMP_SUEQ_S:
+         ASM_VOLATILE_FCMP(fcmp.sueq.s);
+         break;
+      case FCMP_SUEQ_D:
+         ASM_VOLATILE_FCMP(fcmp.sueq.d);
+         break;
+      case FCMP_CULE_S:
+         ASM_VOLATILE_FCMP(fcmp.cule.s);
+         break;
+      case FCMP_CULE_D:
+         ASM_VOLATILE_FCMP(fcmp.cule.d);
+         break;
+      case FCMP_SULE_S:
+         ASM_VOLATILE_FCMP(fcmp.sule.s);
+         break;
+      case FCMP_SULE_D:
+         ASM_VOLATILE_FCMP(fcmp.sule.d);
+         break;
+      case FCMP_CNE_S:
+         ASM_VOLATILE_FCMP(fcmp.cne.s);
+         break;
+      case FCMP_CNE_D:
+         ASM_VOLATILE_FCMP(fcmp.cne.d);
+         break;
+      case FCMP_SNE_S:
+         ASM_VOLATILE_FCMP(fcmp.sne.s);
+         break;
+      case FCMP_SNE_D:
+         ASM_VOLATILE_FCMP(fcmp.sne.d);
+         break;
+      case FCMP_COR_S:
+         ASM_VOLATILE_FCMP(fcmp.cor.s);
+         break;
+      case FCMP_COR_D:
+         ASM_VOLATILE_FCMP(fcmp.cor.d);
+         break;
+      case FCMP_SOR_S:
+         ASM_VOLATILE_FCMP(fcmp.sor.s);
+         break;
+      case FCMP_SOR_D:
+         ASM_VOLATILE_FCMP(fcmp.sor.d);
+         break;
+      case FCMP_CUNE_S:
+         ASM_VOLATILE_FCMP(fcmp.cune.s);
+         break;
+      case FCMP_CUNE_D:
+         ASM_VOLATILE_FCMP(fcmp.cune.d);
+         break;
+      case FCMP_SUNE_S:
+         ASM_VOLATILE_FCMP(fcmp.sune.s);
+         break;
+      case FCMP_SUNE_D:
+         ASM_VOLATILE_FCMP(fcmp.sune.d);
+         break;
+      case FCVT_S_D:
+         ASM_VOLATILE_UNARY(fcvt.s.d);
+         break;
+      case FCVT_D_S:
+         ASM_VOLATILE_UNARY(fcvt.d.s);
+         break;
+      case FTINTRM_W_S:
+         ASM_VOLATILE_UNARY(ftintrm.w.s);
+         break;
+      case FTINTRM_W_D:
+         ASM_VOLATILE_UNARY(ftintrm.w.d);
+         break;
+      case FTINTRM_L_S:
+         ASM_VOLATILE_UNARY(ftintrm.l.s);
+         break;
+      case FTINTRM_L_D:
+         ASM_VOLATILE_UNARY(ftintrm.l.d);
+         break;
+      case FTINTRP_W_S:
+         ASM_VOLATILE_UNARY(ftintrp.w.s);
+         break;
+      case FTINTRP_W_D:
+         ASM_VOLATILE_UNARY(ftintrp.w.d);
+         break;
+      case FTINTRP_L_S:
+         ASM_VOLATILE_UNARY(ftintrp.l.s);
+         break;
+      case FTINTRP_L_D:
+         ASM_VOLATILE_UNARY(ftintrp.l.d);
+         break;
+      case FTINTRZ_W_S:
+         ASM_VOLATILE_UNARY(ftintrz.w.s);
+         break;
+      case FTINTRZ_W_D:
+         ASM_VOLATILE_UNARY(ftintrz.w.d);
+         break;
+      case FTINTRZ_L_S:
+         ASM_VOLATILE_UNARY(ftintrz.l.s);
+         break;
+      case FTINTRZ_L_D:
+         ASM_VOLATILE_UNARY(ftintrz.l.d);
+         break;
+      case FTINTRNE_W_S:
+         ASM_VOLATILE_UNARY(ftintrne.w.s);
+         break;
+      case FTINTRNE_W_D:
+         ASM_VOLATILE_UNARY(ftintrne.w.d);
+         break;
+      case FTINTRNE_L_S:
+         ASM_VOLATILE_UNARY(ftintrne.l.s);
+         break;
+      case FTINTRNE_L_D:
+         ASM_VOLATILE_UNARY(ftintrne.l.d);
+         break;
+      case FTINT_W_S:
+         ASM_VOLATILE_UNARY(ftint.w.s);
+         break;
+      case FTINT_W_D:
+         ASM_VOLATILE_UNARY(ftint.w.d);
+         break;
+      case FTINT_L_S:
+         ASM_VOLATILE_UNARY(ftint.l.s);
+         break;
+      case FTINT_L_D:
+         ASM_VOLATILE_UNARY(ftint.l.d);
+         break;
+      case FFINT_S_W:
+         ASM_VOLATILE_UNARY(ffint.s.w);
+         break;
+      case FFINT_D_W:
+         ASM_VOLATILE_UNARY(ffint.d.w);
+         break;
+      case FFINT_S_L:
+         ASM_VOLATILE_UNARY(ffint.s.l);
+         break;
+      case FFINT_D_L:
+         ASM_VOLATILE_UNARY(ffint.d.l);
+         break;
+      case FRINT_S:
+         ASM_VOLATILE_UNARY(frint.s);
+         break;
+      case FRINT_D:
+         ASM_VOLATILE_UNARY(frint.d);
+         break;
+      default:
+         break;
+   }
+#endif
+   return (ULong)fcsr2;
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- end                         guest_loongarch64_helpers.c ---*/
 /*---------------------------------------------------------------*/
