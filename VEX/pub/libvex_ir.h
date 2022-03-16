@@ -588,10 +588,10 @@ typedef
 
       /* Binary operations, with rounding. */
       /* :: IRRoundingMode(I32) x F64 x F64 -> F64 */ 
-      Iop_AddF64, Iop_SubF64, Iop_MulF64, Iop_DivF64,
+      Iop_AddF64, Iop_SubF64, Iop_MulF64, Iop_DivF64, Iop_ScaleBF64,
 
       /* :: IRRoundingMode(I32) x F32 x F32 -> F32 */ 
-      Iop_AddF32, Iop_SubF32, Iop_MulF32, Iop_DivF32,
+      Iop_AddF32, Iop_SubF32, Iop_MulF32, Iop_DivF32, Iop_ScaleBF32,
 
       /* Variants of the above which produce a 64-bit result but which
          round their result to a IEEE float range first. */
@@ -610,10 +610,10 @@ typedef
 
       /* Unary operations, with rounding. */
       /* :: IRRoundingMode(I32) x F64 -> F64 */
-      Iop_SqrtF64,
+      Iop_SqrtF64, Iop_RSqrtF64, Iop_LogBF64,
 
       /* :: IRRoundingMode(I32) x F32 -> F32 */
-      Iop_SqrtF32,
+      Iop_SqrtF32, Iop_RSqrtF32, Iop_LogBF32,
 
       /* :: IRRoundingMode(I32) x F16 -> F16 */
       Iop_SqrtF16,

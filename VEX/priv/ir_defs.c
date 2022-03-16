@@ -280,6 +280,8 @@ void ppIROp ( IROp op )
       case Iop_SubF64:    vex_printf("SubF64"); return;
       case Iop_MulF64:    vex_printf("MulF64"); return;
       case Iop_DivF64:    vex_printf("DivF64"); return;
+      case Iop_ScaleBF64: vex_printf("ScaleBF64"); return;
+      case Iop_ScaleBF32: vex_printf("ScaleBF32"); return;
       case Iop_AddF64r32: vex_printf("AddF64r32"); return;
       case Iop_SubF64r32: vex_printf("SubF64r32"); return;
       case Iop_MulF64r32: vex_printf("MulF64r32"); return;
@@ -356,6 +358,10 @@ void ppIROp ( IROp op )
       case Iop_SqrtF64:       vex_printf("SqrtF64"); return;
       case Iop_SqrtF32:       vex_printf("SqrtF32"); return;
       case Iop_SqrtF16:       vex_printf("SqrtF16"); return;
+      case Iop_RSqrtF32:      vex_printf("RSqrtF32"); return;
+      case Iop_RSqrtF64:      vex_printf("RSqrtF64"); return;
+      case Iop_LogBF32:       vex_printf("LogBF32"); return;
+      case Iop_LogBF64:       vex_printf("LogBF64"); return;
       case Iop_SinF64:    vex_printf("SinF64"); return;
       case Iop_CosF64:    vex_printf("CosF64"); return;
       case Iop_TanF64:    vex_printf("TanF64"); return;
@@ -1438,10 +1444,13 @@ Bool primopMightTrap ( IROp op )
    case Iop_1Uto8: case Iop_1Uto32: case Iop_1Uto64: case Iop_1Sto8:
    case Iop_1Sto16: case Iop_1Sto32: case Iop_1Sto64:
    case Iop_AddF64: case Iop_SubF64: case Iop_MulF64: case Iop_DivF64:
+   case Iop_ScaleBF64: case Iop_ScaleBF32:
    case Iop_AddF32: case Iop_SubF32: case Iop_MulF32: case Iop_DivF32:
    case Iop_AddF64r32: case Iop_SubF64r32: case Iop_MulF64r32:
    case Iop_DivF64r32: case Iop_NegF64: case Iop_AbsF64:
    case Iop_NegF32: case Iop_AbsF32: case Iop_SqrtF64: case Iop_SqrtF32:
+   case Iop_RSqrtF64: case Iop_RSqrtF32:
+   case Iop_LogBF64: case Iop_LogBF32:
    case Iop_NegF16: case Iop_AbsF16: case Iop_SqrtF16: case Iop_SubF16:
    case Iop_AddF16:
    case Iop_CmpF64: case Iop_CmpF32: case Iop_CmpF16: case Iop_CmpF128:
@@ -3381,12 +3390,14 @@ void typeOfPrimop ( IROp op,
 
       case Iop_AddF64:    case Iop_SubF64: 
       case Iop_MulF64:    case Iop_DivF64:
+      case Iop_ScaleBF64:
       case Iop_AddF64r32: case Iop_SubF64r32: 
       case Iop_MulF64r32: case Iop_DivF64r32:
          TERNARY(ity_RMode,Ity_F64,Ity_F64, Ity_F64);
 
       case Iop_AddF32: case Iop_SubF32:
       case Iop_MulF32: case Iop_DivF32:
+      case Iop_ScaleBF32:
          TERNARY(ity_RMode,Ity_F32,Ity_F32, Ity_F32);
 
       case Iop_AddF16:
@@ -3403,10 +3414,14 @@ void typeOfPrimop ( IROp op,
          UNARY(Ity_F16, Ity_F16);
 
       case Iop_SqrtF64:
+      case Iop_RSqrtF64:
+      case Iop_LogBF64:
       case Iop_RecpExpF64:
          BINARY(ity_RMode,Ity_F64, Ity_F64);
 
       case Iop_SqrtF32:
+      case Iop_RSqrtF32:
+      case Iop_LogBF32:
       case Iop_RoundF32toInt:
       case Iop_RecpExpF32:
          BINARY(ity_RMode,Ity_F32, Ity_F32);
