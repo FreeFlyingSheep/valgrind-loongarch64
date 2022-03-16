@@ -4851,6 +4851,7 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
             switch (st->Ist.MBE.event) {
                case Imbe_Fence:
                case Imbe_CancelReservation:
+               case Imbe_InsnFence:
                   break; /* not interesting */
                default:
                   goto unhandled;

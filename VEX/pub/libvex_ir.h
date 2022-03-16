@@ -2662,7 +2662,12 @@ typedef
       /* Needed only on ARM.  It cancels a reservation made by a
          preceding Linked-Load, and needs to be handed through to the
          back end, just as LL and SC themselves are. */
-      Imbe_CancelReservation
+      Imbe_CancelReservation,
+      /* Needed only on LOONGARCH64.  It completes the synchronization
+         between the store operation and the instruction fetch operation
+         within a single processor core, and needs to be handed through
+         to the back end. */
+      Imbe_InsnFence
    }
    IRMBusEvent;
 
