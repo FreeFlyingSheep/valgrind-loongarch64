@@ -957,6 +957,18 @@ LOONGARCH64Instr* LOONGARCH64Instr_CMove ( HReg cond, HReg r0, HReg r1,
    return i;
 }
 
+LOONGARCH64Instr* LOONGARCH64Instr_Call ( HReg cond, Addr64 target,
+                                          UInt nArgRegs, RetLoc rloc )
+{
+   LOONGARCH64Instr* i   = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
+   i->tag                = LAin_Call;
+   i->LAin.Call.cond     = cond;
+   i->LAin.Call.target   = target;
+   i->LAin.Call.nArgRegs = nArgRegs;
+   i->LAin.Call.rloc     = rloc;
+   return i;
+}
+
 
 /* -------- Pretty Print instructions ------------- */
 
@@ -1144,6 +1156,21 @@ static inline void ppCMove ( HReg cond, HReg r0, HReg r1,
    }
 }
 
+static inline void ppCall ( HReg cond, Addr64 target,
+                            UInt nArgRegs, RetLoc rloc )
+{
+   if (!hregIsInvalid(cond)) {
+      vex_printf("if (");
+      ppHRegLOONGARCH64(cond);
+      vex_printf(") { ");
+   }
+   vex_printf("call 0x%llx [nArgRegs=%u, ", target, nArgRegs);
+   ppRetLoc(rloc);
+   vex_printf("]");
+   if (!hregIsInvalid(cond))
+      vex_printf(" }");
+}
+
 void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
 {
    vassert(mode64 == True);
@@ -1210,6 +1237,10 @@ void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
          ppCMove(i->LAin.CMove.cond, i->LAin.CMove.r0,
                  i->LAin.CMove.r1, i->LAin.CMove.dst,
                  i->LAin.CMove.isInt);
+         break;
+      case LAin_Call:
+         ppCall(i->LAin.Call.cond, i->LAin.Call.target,
+                i->LAin.Call.nArgRegs, i->LAin.Call.rloc);
          break;
       default:
          vpanic("ppLOONGARCH64Instr");
@@ -1305,6 +1336,43 @@ void getRegUsage_LOONGARCH64Instr ( HRegUsage* u, const LOONGARCH64Instr* i,
          addHRegUse(u, HRmRead, i->LAin.CMove.r1);
          addHRegUse(u, HRmWrite, i->LAin.CMove.dst);
          break;
+      case LAin_Call:
+         /* logic and comments copied/modified from mips and arm64 back end */
+         /* This is a bit subtle. */
+         /* First off, we need to consider the cond register. */
+         if (!hregIsInvalid(i->LAin.Call.cond))
+            addHRegUse(u, HRmRead, i->LAin.Call.cond);
+         /* Then, claim it trashes all the caller-saved regs
+            which fall within the register allocator's jurisdiction. */
+         addHRegUse(u, HRmWrite, hregLOONGARCH64_R14());
+         addHRegUse(u, HRmWrite, hregLOONGARCH64_R15());
+         addHRegUse(u, HRmWrite, hregLOONGARCH64_R16());
+         addHRegUse(u, HRmWrite, hregLOONGARCH64_R17());
+         addHRegUse(u, HRmWrite, hregLOONGARCH64_R18());
+         addHRegUse(u, HRmWrite, hregLOONGARCH64_R19());
+         addHRegUse(u, HRmWrite, hregLOONGARCH64_R20());
+         /* Now we have to state any parameter-carrying registers
+            which might be read.  This depends on nArgRegs. */
+            switch (i->LAin.Call.nArgRegs) {
+            case 8: addHRegUse(u, HRmRead, hregLOONGARCH64_R11()); /* fallthrough */
+            case 7: addHRegUse(u, HRmRead, hregLOONGARCH64_R10()); /* fallthrough */
+            case 6: addHRegUse(u, HRmRead, hregLOONGARCH64_R9());  /* fallthrough */
+            case 5: addHRegUse(u, HRmRead, hregLOONGARCH64_R8());  /* fallthrough */
+            case 4: addHRegUse(u, HRmRead, hregLOONGARCH64_R7());  /* fallthrough */
+            case 3: addHRegUse(u, HRmRead, hregLOONGARCH64_R6());  /* fallthrough */
+            case 2: addHRegUse(u, HRmRead, hregLOONGARCH64_R5());  /* fallthrough */
+            case 1: addHRegUse(u, HRmRead, hregLOONGARCH64_R4());  /* fallthrough */
+            case 0: break;
+            default: vpanic("getRegUsage_LOONGARCH64:Call:regparms"); break;
+         }
+         /* Finally, there is the issue that the insn trashes a
+            register because the literal target address has to be
+            loaded into a register.  However, we reserve $t0 for that
+            purpose so there's no further complexity here.  Stating $t0
+            as trashed is pointless since it's not under the control
+            of the allocator, but what the hell. */
+         addHRegUse(u, HRmWrite, hregT0());
+         break;
       default:
          ppLOONGARCH64Instr(i, mode64);
          vpanic("getRegUsage_LOONGARCH64Instr");
@@ -1392,6 +1460,11 @@ void mapRegs_LOONGARCH64Instr ( HRegRemap* m, LOONGARCH64Instr* i,
          mapReg(m, &i->LAin.CMove.r0);
          mapReg(m, &i->LAin.CMove.r1);
          mapReg(m, &i->LAin.CMove.dst);
+         break;
+      case LAin_Call:
+         if (!hregIsInvalid(i->LAin.Call.cond))
+            mapReg(m, &i->LAin.Call.cond);
+         /* Hardwires $r12. */
          break;
       default:
          ppLOONGARCH64Instr(i, mode64);
@@ -2156,6 +2229,46 @@ static inline UInt* mkCMove ( UInt* p, HReg cond, HReg r0,
    return p;
 }
 
+static inline UInt* mkCall ( UInt* p, HReg cond, Addr64 target, RetLoc rloc )
+{
+   if (!hregIsInvalid(cond) && rloc.pri != RLPri_None) {
+      /* The call might not happen (it isn't unconditional) and
+         it returns a result.  In this case we will need to
+         generate a control flow diamond to put 0x555..555 in
+         the return register(s) in the case where the call
+         doesn't happen.  If this ever becomes necessary, maybe
+         copy code from the 32-bit ARM equivalent.  Until that
+         day, just give up. */
+      return NULL;
+   }
+
+   UInt* ptmp = NULL;
+   if (!hregIsInvalid(cond)) {
+      /* Create a hole to put a conditional branch in.  We'll
+         patch it once we know the branch length. */
+      ptmp = p;
+      p++;
+   }
+
+   /*
+      $t0 = target
+      jirl $ra, $t0, 0
+    */
+   p = mkLoadImm(p, hregT0(), target);
+   *p++ = emit_op_offs16_rj_rd(LAextra_JIRL, 0, 12, 1);
+
+   /* Patch the hole if necessary */
+   if (!hregIsInvalid(cond)) {
+      vassert(ptmp != NULL);
+      UInt offs = (UInt)(p - ptmp);
+      vassert(offs >= 3 && offs <= 6);
+      /* beq cond, $zero, offs */
+      *ptmp++ = emit_op_offs16_rj_rd(LAextra_BEQ, offs, iregEnc(cond), 0);
+   }
+
+   return p;
+}
+
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code.  If the emitted
@@ -2245,6 +2358,10 @@ Int emit_LOONGARCH64Instr ( /*MB_MOD*/Bool* is_profInc,
          p = mkCMove(p, i->LAin.CMove.cond, i->LAin.CMove.r0,
                      i->LAin.CMove.r1, i->LAin.CMove.dst,
                      i->LAin.CMove.isInt);
+         break;
+      case LAin_Call:
+         p = mkCall(p, i->LAin.Call.cond, i->LAin.Call.target,
+                    i->LAin.Call.rloc);
          break;
       default:
          p = NULL;
