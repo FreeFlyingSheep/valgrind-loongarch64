@@ -2964,7 +2964,22 @@ VexInvalRange patchProfInc_LOONGARCH64 ( VexEndness endness_host,
    vassert(endness_host == VexEndnessLE);
    vassert(sizeof(ULong*) == 8);
 
-   VexInvalRange vir = { (HWord)place_to_patch, 0 };
+   /*
+      $t0 = NotKnownYet
+      ld.d   $t1, $t0, 0
+      addi.d $t1, $t1, 1
+      st.d   $t1, $t0, 0
+    */
+   UInt* p = (UInt*)place_to_patch;
+   vassert(((HWord)p & 3) == 0);
+   vassert(is_LoadImm_EXACTLY4(p, hregT0(), 0x6555755585559555UL));
+   vassert(p[4] == emit_op_si12_rj_rd(LAload_LD_D, 0, 12, 13));
+   vassert(p[5] == emit_op_si12_rj_rd(LAbin_ADDI_D, 1, 13, 13));
+   vassert(p[6] == emit_op_si12_rj_rd(LAstore_ST_D, 0, 12, 13));
+
+   p = mkLoadImm_EXACTLY4(p, hregT0(), (ULong)(Addr)location_of_counter);
+
+   VexInvalRange vir = { (HWord)place_to_patch, 4 * 4 };
    return vir;
 }
 
