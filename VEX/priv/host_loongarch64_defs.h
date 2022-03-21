@@ -388,7 +388,9 @@ typedef enum {
    /* Floating point insns */
    LAin_FpUn,       /* floating point unary */
    LAin_FpBin,      /* floating point binary */
-   LAin_FpTri       /* floating point trinary */
+   LAin_FpTri,      /* floating point trinary */
+   LAin_FpLoad,     /* floating point load */
+   LAin_FpStore     /* floating point store */
 } LOONGARCH64InstrTag;
 
 typedef struct {
@@ -447,6 +449,16 @@ typedef struct {
          HReg                 src1;
          HReg                 dst;
       } FpTrinary;
+      struct {
+         LOONGARCH64FpLoadOp  op;
+         LOONGARCH64AMode*    src;
+         HReg                 dst;
+      } FpLoad;
+      struct {
+         LOONGARCH64FpStoreOp op;
+         LOONGARCH64AMode*    dst;
+         HReg                 src;
+      } FpStore;
    } LAin;
 } LOONGARCH64Instr;
 
@@ -476,6 +488,12 @@ extern LOONGARCH64Instr* LOONGARCH64Instr_FpBinary  ( LOONGARCH64FpBinOp op,
 extern LOONGARCH64Instr* LOONGARCH64Instr_FpTrinary ( LOONGARCH64FpTriOp op,
                                                       HReg src3, HReg src2,
                                                       HReg src1, HReg dst );
+extern LOONGARCH64Instr* LOONGARCH64Instr_FpLoad    ( LOONGARCH64FpLoadOp op,
+                                                      LOONGARCH64AMode* src,
+                                                      HReg dst );
+extern LOONGARCH64Instr* LOONGARCH64Instr_FpStore   ( LOONGARCH64FpStoreOp op,
+                                                      LOONGARCH64AMode* dst,
+                                                      HReg src );
 
 extern void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 );
 
