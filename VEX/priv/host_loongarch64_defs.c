@@ -660,6 +660,25 @@ static inline const HChar* showLOONGARCH64FpBinOp ( LOONGARCH64FpBinOp op )
    return ret;
 }
 
+static inline const HChar* showLOONGARCH64FpTriOp ( LOONGARCH64FpTriOp op )
+{
+   const HChar* ret;
+   switch (op) {
+      case LAfpbin_FMADD_S:
+         return "fmadd.s";
+      case LAfpbin_FMADD_D:
+         return "fmadd.d";
+      case LAfpbin_FMSUB_S:
+         return "fmsub.s";
+      case LAfpbin_FMSUB_D:
+         return "fmsub.d";
+      default:
+         vpanic("showLOONGARCH64FpTriOp");
+         break;
+   }
+   return ret;
+}
+
 LOONGARCH64Instr* LOONGARCH64Instr_LI ( ULong imm, HReg dst )
 {
    LOONGARCH64Instr* i = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
@@ -759,6 +778,20 @@ LOONGARCH64Instr* LOONGARCH64Instr_FpBinary ( LOONGARCH64FpBinOp op, HReg src2,
    return i;
 }
 
+LOONGARCH64Instr* LOONGARCH64Instr_FpTrinary ( LOONGARCH64FpTriOp op,
+                                               HReg src3, HReg src2,
+                                               HReg src1, HReg dst )
+{
+   LOONGARCH64Instr* i    = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
+   i->tag                 = LAin_FpTri;
+   i->LAin.FpTrinary.op   = op;
+   i->LAin.FpTrinary.src3 = src3;
+   i->LAin.FpTrinary.src2 = src2;
+   i->LAin.FpTrinary.src1 = src1;
+   i->LAin.FpTrinary.dst  = dst;
+   return i;
+}
+
 
 /* -------- Pretty Print instructions ------------- */
 
@@ -839,6 +872,19 @@ static inline void ppFpBinary ( LOONGARCH64FpBinOp op, HReg src2,
    ppHRegLOONGARCH64(src2);
 }
 
+static inline void ppFpTrinary ( LOONGARCH64FpTriOp op, HReg src3,
+                                HReg src2, HReg src1, HReg dst )
+{
+   vex_printf("%s ", showLOONGARCH64FpTriOp(op));
+   ppHRegLOONGARCH64(dst);
+   vex_printf(", ");
+   ppHRegLOONGARCH64(src1);
+   vex_printf(", ");
+   ppHRegLOONGARCH64(src2);
+   vex_printf(", ");
+   ppHRegLOONGARCH64(src3);
+}
+
 void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
 {
    vassert(mode64 == True);
@@ -872,6 +918,11 @@ void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
       case LAin_FpBin:
          ppFpBinary(i->LAin.FpBinary.op, i->LAin.FpBinary.src2,
                     i->LAin.FpBinary.src1, i->LAin.FpBinary.dst);
+         break;
+      case LAin_FpTri:
+         ppFpTrinary(i->LAin.FpTrinary.op, i->LAin.FpTrinary.src3,
+                     i->LAin.FpTrinary.src2, i->LAin.FpTrinary.src1,
+                     i->LAin.FpTrinary.dst);
          break;
       default:
          vpanic("ppLOONGARCH64Instr");
@@ -927,6 +978,12 @@ void getRegUsage_LOONGARCH64Instr ( HRegUsage* u, const LOONGARCH64Instr* i,
          addHRegUse(u, HRmRead, i->LAin.FpBinary.src1);
          addHRegUse(u, HRmWrite, i->LAin.FpBinary.dst);
          break;
+      case LAin_FpTri:
+         addHRegUse(u, HRmRead, i->LAin.FpTrinary.src3);
+         addHRegUse(u, HRmRead, i->LAin.FpTrinary.src2);
+         addHRegUse(u, HRmRead, i->LAin.FpTrinary.src1);
+         addHRegUse(u, HRmWrite, i->LAin.FpTrinary.dst);
+         break;
       default:
          ppLOONGARCH64Instr(i, mode64);
          vpanic("getRegUsage_LOONGARCH64Instr");
@@ -974,6 +1031,12 @@ void mapRegs_LOONGARCH64Instr ( HRegRemap* m, LOONGARCH64Instr* i,
          mapReg(m, &i->LAin.FpBinary.src2);
          mapReg(m, &i->LAin.FpBinary.src1);
          mapReg(m, &i->LAin.FpBinary.dst);
+         break;
+      case LAin_FpTri:
+         mapReg(m, &i->LAin.FpTrinary.src3);
+         mapReg(m, &i->LAin.FpTrinary.src2);
+         mapReg(m, &i->LAin.FpTrinary.src1);
+         mapReg(m, &i->LAin.FpTrinary.dst);
          break;
       default:
          ppLOONGARCH64Instr(i, mode64);
@@ -1504,6 +1567,22 @@ static inline UInt* mkFpBinary ( UInt* p, LOONGARCH64FpBinOp op, HReg src2,
    }
 }
 
+static inline UInt* mkFpTrinary ( UInt* p, LOONGARCH64FpTriOp op, HReg src3,
+                                  HReg src2, HReg src1, HReg dst )
+{
+   switch (op) {
+      case LAfpbin_FMADD_S:
+      case LAfpbin_FMADD_D:
+      case LAfpbin_FMSUB_S:
+      case LAfpbin_FMSUB_D:
+         *p++ = emit_op_fa_fk_fj_fd(op, fregEnc(src3), fregEnc(src2),
+                                    fregEnc(src1), fregEnc(dst));
+         return p;
+      default:
+         return NULL;
+   }
+}
+
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code.  If the emitted
@@ -1559,6 +1638,11 @@ Int emit_LOONGARCH64Instr ( /*MB_MOD*/Bool* is_profInc,
       case LAin_FpBin:
          p = mkFpBinary(p, i->LAin.FpBinary.op, i->LAin.FpBinary.src2,
                         i->LAin.FpBinary.src1, i->LAin.FpBinary.dst);
+         break;
+      case LAin_FpTri:
+         p = mkFpTrinary(p, i->LAin.FpTrinary.op, i->LAin.FpTrinary.src3,
+                         i->LAin.FpTrinary.src2, i->LAin.FpTrinary.src1,
+                         i->LAin.FpTrinary.dst);
          break;
       default:
          p = NULL;
