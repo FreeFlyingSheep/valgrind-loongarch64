@@ -526,6 +526,23 @@ static inline const HChar* showLOONGARCH64StoreOp ( LOONGARCH64StoreOp op )
    }
 }
 
+static inline const HChar* showLOONGARCH64LLSCOp ( LOONGARCH64LLSCOp op )
+{
+   switch (op) {
+      case LAllsc_LL_W:
+         return "ll.w";
+      case LAllsc_SC_W:
+         return "sc.w";
+      case LAllsc_LL_D:
+         return "ll.d";
+      case LAllsc_SC_D:
+         return "sc.d";
+      default:
+         vpanic("LOONGARCH64LLSCOp");
+         break;
+   }
+}
+
 LOONGARCH64Instr* LOONGARCH64Instr_LI ( ULong imm, HReg dst )
 {
    LOONGARCH64Instr* i = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
@@ -581,6 +598,18 @@ LOONGARCH64Instr* LOONGARCH64Instr_Store ( LOONGARCH64StoreOp op,
    return i;
 }
 
+LOONGARCH64Instr* LOONGARCH64Instr_LLSC ( LOONGARCH64LLSCOp op, Bool isLoad,
+                                          LOONGARCH64AMode* addr, HReg val )
+{
+   LOONGARCH64Instr* i = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
+   i->tag              = LAin_LLSC;
+   i->LAin.LLSC.op     = op;
+   i->LAin.LLSC.isLoad = isLoad;
+   i->LAin.LLSC.addr   = addr;
+   i->LAin.LLSC.val    = val;
+   return i;
+}
+
 
 /* -------- Pretty Print instructions ------------- */
 
@@ -628,6 +657,15 @@ static inline void ppStore ( LOONGARCH64StoreOp op, LOONGARCH64AMode* dst,
    ppLOONGARCH64AMode(dst);
 }
 
+static inline void ppLLSC ( LOONGARCH64LLSCOp op, LOONGARCH64AMode* addr,
+                            HReg val )
+{
+   vex_printf("%s ", showLOONGARCH64LLSCOp(op));
+   ppHRegLOONGARCH64(val);
+   vex_printf(", ");
+   ppLOONGARCH64AMode(addr);
+}
+
 void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
 {
    vassert(mode64 == True);
@@ -647,6 +685,9 @@ void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
          break;
       case LAin_Store:
          ppStore(i->LAin.Store.op, i->LAin.Store.dst, i->LAin.Store.src);
+         break;
+      case LAin_LLSC:
+         ppLLSC(i->LAin.LLSC.op, i->LAin.LLSC.addr, i->LAin.LLSC.val);
          break;
       default:
          vpanic("ppLOONGARCH64Instr");
@@ -683,6 +724,13 @@ void getRegUsage_LOONGARCH64Instr ( HRegUsage* u, const LOONGARCH64Instr* i,
          addRegUsage_LOONGARCH64AMode(u, i->LAin.Store.dst);
          addHRegUse(u, HRmRead, i->LAin.Store.src);
          break;
+      case LAin_LLSC:
+         addRegUsage_LOONGARCH64AMode(u, i->LAin.LLSC.addr);
+         if (i->LAin.LLSC.isLoad)
+            addHRegUse(u, HRmWrite, i->LAin.LLSC.val);
+         else
+            addHRegUse(u, HRmRead, i->LAin.LLSC.val);
+         break;
       default:
          ppLOONGARCH64Instr(i, mode64);
          vpanic("getRegUsage_LOONGARCH64Instr");
@@ -714,6 +762,10 @@ void mapRegs_LOONGARCH64Instr ( HRegRemap* m, LOONGARCH64Instr* i,
       case LAin_Store:
          mapRegs_LOONGARCH64AMode(m, i->LAin.Store.dst);
          mapReg(m, &i->LAin.Store.src);
+         break;
+      case LAin_LLSC:
+         mapRegs_LOONGARCH64AMode(m, i->LAin.LLSC.addr);
+         mapReg(m, &i->LAin.LLSC.val);
          break;
       default:
          ppLOONGARCH64Instr(i, mode64);
@@ -1154,6 +1206,23 @@ static UInt* mkStore ( UInt* p, LOONGARCH64StoreOp op,
    }
 }
 
+static inline UInt* mkLLSC ( UInt* p, LOONGARCH64LLSCOp op,
+                             LOONGARCH64AMode* addr, HReg val )
+{
+   switch (op) {
+      case LAllsc_LL_W:
+      case LAllsc_SC_W:
+      case LAllsc_LL_D:
+      case LAllsc_SC_D:
+         vassert(addr->tag == LAam_RI);
+         *p++ = emit_op_si14_rj_rd(op, addr->LAam.RI.index,
+                                   iregEnc(addr->LAam.RI.base), iregEnc(val));
+         return p;
+      default:
+         return NULL;
+   }
+}
+
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code.  If the emitted
@@ -1195,6 +1264,9 @@ Int emit_LOONGARCH64Instr ( /*MB_MOD*/Bool* is_profInc,
       case LAin_Store:
          p = mkStore(p, i->LAin.Store.op, i->LAin.Store.dst,
                      i->LAin.Store.src);
+         break;
+      case LAin_LLSC:
+         p = mkLLSC(p, i->LAin.LLSC.op, i->LAin.LLSC.addr, i->LAin.LLSC.val);
          break;
       default:
          p = NULL;
