@@ -738,6 +738,29 @@ static inline const HChar* showLOONGARCH64FpMoveOp ( LOONGARCH64FpMoveOp op )
    }
 }
 
+static inline const HChar* showLOONGARCH64FpCmpOp ( LOONGARCH64FpCmpOp op )
+{
+   const HChar* ret;
+   switch (op) {
+      case LAfpcmp_FCMP_CLT_S:
+         return "fcmp.clt.s";
+      case LAfpcmp_FCMP_CLT_D:
+         return "fcmp.clt.d";
+      case LAfpcmp_FCMP_CEQ_S:
+         return "fcmp.ceq.s";
+      case LAfpcmp_FCMP_CEQ_D:
+         return "fcmp.ceq.d";
+      case LAfpcmp_FCMP_CUN_S:
+         return "fcmp.cun.s";
+      case LAfpcmp_FCMP_CUN_D:
+         return "fcmp.cun.d";
+      default:
+         vpanic("showLOONGARCH64FpCmpOp");
+         break;
+   }
+   return ret;
+}
+
 LOONGARCH64Instr* LOONGARCH64Instr_LI ( ULong imm, HReg dst )
 {
    LOONGARCH64Instr* i = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
@@ -884,6 +907,18 @@ LOONGARCH64Instr* LOONGARCH64Instr_FpMove ( LOONGARCH64FpMoveOp op,
    return i;
 }
 
+LOONGARCH64Instr* LOONGARCH64Instr_FpCmp ( LOONGARCH64FpCmpOp op, HReg src2,
+                                           HReg src1, HReg dst )
+{
+   LOONGARCH64Instr* i   = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
+   i->tag                = LAin_FpCmp;
+   i->LAin.FpCmp.op      = op;
+   i->LAin.FpCmp.src2    = src2;
+   i->LAin.FpCmp.src1    = src1;
+   i->LAin.FpCmp.dst     = dst;
+   return i;
+}
+
 
 /* -------- Pretty Print instructions ------------- */
 
@@ -1003,6 +1038,19 @@ static inline void ppFpMove ( LOONGARCH64FpMoveOp op, HReg src, HReg dst )
    ppHRegLOONGARCH64(src);
 }
 
+static inline void ppFpCmp ( LOONGARCH64FpCmpOp op, HReg src2,
+                             HReg src1, HReg dst )
+{
+   vex_printf("%s ", showLOONGARCH64FpCmpOp(op));
+   vex_printf("$fcc0, ");
+   ppHRegLOONGARCH64(src1);
+   vex_printf(", ");
+   ppHRegLOONGARCH64(src2);
+   vex_printf("; movcf2gr ");
+   ppHRegLOONGARCH64(dst);
+   vex_printf(", $fcc0");
+}
+
 void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
 {
    vassert(mode64 == True);
@@ -1052,6 +1100,10 @@ void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
       case LAin_FpMove:
          ppFpMove(i->LAin.FpMove.op, i->LAin.FpMove.src,
                    i->LAin.FpMove.dst);
+         break;
+      case LAin_FpCmp:
+         ppFpCmp(i->LAin.FpCmp.op, i->LAin.FpCmp.src2,
+                 i->LAin.FpCmp.src1, i->LAin.FpCmp.dst);
          break;
       default:
          vpanic("ppLOONGARCH64Instr");
@@ -1125,6 +1177,11 @@ void getRegUsage_LOONGARCH64Instr ( HRegUsage* u, const LOONGARCH64Instr* i,
          addHRegUse(u, HRmRead, i->LAin.FpMove.src);
          addHRegUse(u, HRmWrite, i->LAin.FpMove.dst);
          break;
+      case LAin_FpCmp:
+         addHRegUse(u, HRmRead, i->LAin.FpCmp.src2);
+         addHRegUse(u, HRmRead, i->LAin.FpCmp.src1);
+         addHRegUse(u, HRmWrite, i->LAin.FpCmp.dst);
+         break;
       default:
          ppLOONGARCH64Instr(i, mode64);
          vpanic("getRegUsage_LOONGARCH64Instr");
@@ -1190,6 +1247,11 @@ void mapRegs_LOONGARCH64Instr ( HRegRemap* m, LOONGARCH64Instr* i,
       case LAin_FpMove:
          mapReg(m, &i->LAin.FpMove.src);
          mapReg(m, &i->LAin.FpMove.dst);
+         break;
+      case LAin_FpCmp:
+         mapReg(m, &i->LAin.FpCmp.src2);
+         mapReg(m, &i->LAin.FpCmp.src1);
+         mapReg(m, &i->LAin.FpCmp.dst);
          break;
       default:
          ppLOONGARCH64Instr(i, mode64);
@@ -1804,6 +1866,28 @@ static inline UInt* mkFpMove ( UInt* p, LOONGARCH64FpMoveOp op, HReg src, HReg d
    }
 }
 
+static inline UInt* mkFpCmp ( UInt* p, LOONGARCH64FpCmpOp op, HReg src2,
+                              HReg src1, HReg dst )
+{
+   /*
+      fcmp.cond.[sd] $fcc0, src1, src2
+      movcf2gr       dst, $fcc0
+    */
+   switch (op) {
+      case LAfpcmp_FCMP_CLT_S:
+      case LAfpcmp_FCMP_CLT_D:
+      case LAfpcmp_FCMP_CEQ_S:
+      case LAfpcmp_FCMP_CEQ_D:
+      case LAfpcmp_FCMP_CUN_S:
+      case LAfpcmp_FCMP_CUN_D:
+         *p++ = emit_op_fk_fj_cd(op, fregEnc(src2), fregEnc(src1), 0);
+         *p++ = emit_op_cj_rd(LAextra_MOVCF2GR, 0, iregEnc(dst));
+         return p;
+      default:
+         return NULL;
+   }
+}
+
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code.  If the emitted
@@ -1876,6 +1960,10 @@ Int emit_LOONGARCH64Instr ( /*MB_MOD*/Bool* is_profInc,
       case LAin_FpMove:
          p = mkFpMove(p, i->LAin.FpMove.op, i->LAin.FpMove.src,
                       i->LAin.FpMove.dst);
+         break;
+      case LAin_FpCmp:
+         p = mkFpCmp(p, i->LAin.FpCmp.op, i->LAin.FpCmp.src2,
+                     i->LAin.FpCmp.src1, i->LAin.FpCmp.dst);
          break;
       default:
          p = NULL;
