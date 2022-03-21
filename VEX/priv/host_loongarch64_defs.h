@@ -382,7 +382,8 @@ typedef enum {
    LAin_Bin,        /* binary */
    LAin_Load,       /* load */
    LAin_Store,      /* store */
-   LAin_LLSC        /* ll/sc */
+   LAin_LLSC,       /* ll/sc */
+   LAin_Bar         /* barrier */
 } LOONGARCH64InstrTag;
 
 typedef struct {
@@ -419,6 +420,10 @@ typedef struct {
          LOONGARCH64AMode*    addr;
          HReg                 val;
       } LLSC;
+      struct {
+         LOONGARCH64BarOp     op;
+         UShort               hint;
+      } Bar;
    } LAin;
 } LOONGARCH64Instr;
 
@@ -438,6 +443,8 @@ extern LOONGARCH64Instr* LOONGARCH64Instr_LLSC      ( LOONGARCH64LLSCOp op,
                                                       Bool isLoad,
                                                       LOONGARCH64AMode* addr,
                                                       HReg val );
+extern LOONGARCH64Instr* LOONGARCH64Instr_Bar       ( LOONGARCH64BarOp op,
+                                                      UShort hint );
 
 extern void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 );
 

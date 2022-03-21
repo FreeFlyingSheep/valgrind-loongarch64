@@ -543,6 +543,21 @@ static inline const HChar* showLOONGARCH64LLSCOp ( LOONGARCH64LLSCOp op )
    }
 }
 
+static inline const HChar* showLOONGARCH64BarOp ( LOONGARCH64BarOp op )
+{
+   const HChar* ret;
+   switch (op) {
+      case LAbar_DBAR:
+         return "dbar";
+      case LAbar_IBAR:
+         return "ibar";
+      default:
+         vpanic("showLOONGARCH64BarOp");
+         break;
+   }
+   return ret;
+}
+
 LOONGARCH64Instr* LOONGARCH64Instr_LI ( ULong imm, HReg dst )
 {
    LOONGARCH64Instr* i = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
@@ -610,6 +625,15 @@ LOONGARCH64Instr* LOONGARCH64Instr_LLSC ( LOONGARCH64LLSCOp op, Bool isLoad,
    return i;
 }
 
+LOONGARCH64Instr* LOONGARCH64Instr_Bar ( LOONGARCH64BarOp op, UShort hint )
+{
+   LOONGARCH64Instr* i = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
+   i->tag              = LAin_Bar;
+   i->LAin.Bar.op      = op;
+   i->LAin.Bar.hint    = hint;
+   return i;
+}
+
 
 /* -------- Pretty Print instructions ------------- */
 
@@ -666,6 +690,11 @@ static inline void ppLLSC ( LOONGARCH64LLSCOp op, LOONGARCH64AMode* addr,
    ppLOONGARCH64AMode(addr);
 }
 
+static inline void ppBar ( LOONGARCH64BarOp op, UShort hint )
+{
+   vex_printf("%s %u", showLOONGARCH64BarOp(op), (UInt)hint);
+}
+
 void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
 {
    vassert(mode64 == True);
@@ -688,6 +717,9 @@ void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
          break;
       case LAin_LLSC:
          ppLLSC(i->LAin.LLSC.op, i->LAin.LLSC.addr, i->LAin.LLSC.val);
+         break;
+      case LAin_Bar:
+         ppBar(i->LAin.Bar.op, i->LAin.Bar.hint);
          break;
       default:
          vpanic("ppLOONGARCH64Instr");
@@ -731,6 +763,9 @@ void getRegUsage_LOONGARCH64Instr ( HRegUsage* u, const LOONGARCH64Instr* i,
          else
             addHRegUse(u, HRmRead, i->LAin.LLSC.val);
          break;
+      case LAin_Bar:
+         /* No regs. */
+         break;
       default:
          ppLOONGARCH64Instr(i, mode64);
          vpanic("getRegUsage_LOONGARCH64Instr");
@@ -766,6 +801,9 @@ void mapRegs_LOONGARCH64Instr ( HRegRemap* m, LOONGARCH64Instr* i,
       case LAin_LLSC:
          mapRegs_LOONGARCH64AMode(m, i->LAin.LLSC.addr);
          mapReg(m, &i->LAin.LLSC.val);
+         break;
+      case LAin_Bar:
+         /* No regs. */
          break;
       default:
          ppLOONGARCH64Instr(i, mode64);
@@ -1223,6 +1261,18 @@ static inline UInt* mkLLSC ( UInt* p, LOONGARCH64LLSCOp op,
    }
 }
 
+static inline UInt* mkBar ( UInt* p, LOONGARCH64BarOp op, UShort hint )
+{
+   switch (op) {
+      case LAbar_DBAR:
+      case LAbar_IBAR:
+         *p++ = emit_op_hint15(op, hint);
+         return p;
+      default:
+         return NULL;
+   }
+}
+
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code.  If the emitted
@@ -1267,6 +1317,9 @@ Int emit_LOONGARCH64Instr ( /*MB_MOD*/Bool* is_profInc,
          break;
       case LAin_LLSC:
          p = mkLLSC(p, i->LAin.LLSC.op, i->LAin.LLSC.addr, i->LAin.LLSC.val);
+         break;
+      case LAin_Bar:
+         p = mkBar(p, i->LAin.Bar.op, i->LAin.Bar.hint);
          break;
       default:
          p = NULL;
