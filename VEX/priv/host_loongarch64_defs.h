@@ -375,7 +375,10 @@ typedef enum {
 typedef enum {
    /* Pseudo-insn, used for generating a 64-bit
       literal to register */
-   LAin_LI          /* load imm */
+   LAin_LI,         /* load imm */
+
+   /* Integer insns */
+   LAin_Un          /* unary */
 } LOONGARCH64InstrTag;
 
 typedef struct {
@@ -385,10 +388,17 @@ typedef struct {
          ULong                imm;
          HReg                 dst;
       } LI;
+      struct {
+         LOONGARCH64UnOp      op;
+         HReg                 src;
+         HReg                 dst;
+      } Unary;
    } LAin;
 } LOONGARCH64Instr;
 
 extern LOONGARCH64Instr* LOONGARCH64Instr_LI        ( ULong imm, HReg dst );
+extern LOONGARCH64Instr* LOONGARCH64Instr_Unary     ( LOONGARCH64UnOp op,
+                                                      HReg src, HReg dst );
 
 extern void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 );
 

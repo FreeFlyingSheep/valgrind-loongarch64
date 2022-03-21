@@ -364,12 +364,44 @@ static inline void mapRegs_LOONGARCH64RI( HRegRemap* m, LOONGARCH64RI* ri )
 
 /* --------- Instructions. --------- */
 
+static inline const HChar* showLOONGARCH64UnOp ( LOONGARCH64UnOp op )
+{
+   switch (op) {
+      case LAun_CLZ_W:
+         return "clz.w";
+      case LAun_CTZ_W:
+         return "ctz.w";
+      case LAun_CLZ_D:
+         return "clz.d";
+      case LAun_CTZ_D:
+         return "ctz.w";
+      case LAun_EXT_W_H:
+         return "ext.w.h";
+      case LAun_EXT_W_B:
+         return "ext.w.b";
+      default:
+         vpanic("showLOONGARCH64UnOp");
+         break;
+   }
+}
+
 LOONGARCH64Instr* LOONGARCH64Instr_LI ( ULong imm, HReg dst )
 {
    LOONGARCH64Instr* i = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
    i->tag              = LAin_LI;
    i->LAin.LI.imm      = imm;
    i->LAin.LI.dst      = dst;
+   return i;
+}
+
+LOONGARCH64Instr* LOONGARCH64Instr_Unary ( LOONGARCH64UnOp op,
+                                           HReg src, HReg dst )
+{
+   LOONGARCH64Instr* i = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
+   i->tag              = LAin_Un;
+   i->LAin.Unary.op    = op;
+   i->LAin.Unary.src   = src;
+   i->LAin.Unary.dst   = dst;
    return i;
 }
 
@@ -383,12 +415,23 @@ static inline void ppLI ( ULong imm, HReg dst )
    vex_printf(", 0x%llx", imm);
 }
 
+static inline void ppUnary ( LOONGARCH64UnOp op, HReg src, HReg dst )
+{
+   vex_printf("%s ", showLOONGARCH64UnOp(op));
+   ppHRegLOONGARCH64(dst);
+   vex_printf(", ");
+   ppHRegLOONGARCH64(src);
+}
+
 void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
 {
    vassert(mode64 == True);
    switch (i->tag) {
       case LAin_LI:
          ppLI(i->LAin.LI.imm, i->LAin.LI.dst);
+         break;
+      case LAin_Un:
+         ppUnary(i->LAin.Unary.op, i->LAin.Unary.src, i->LAin.Unary.dst);
          break;
       default:
          vpanic("ppLOONGARCH64Instr");
@@ -408,6 +451,10 @@ void getRegUsage_LOONGARCH64Instr ( HRegUsage* u, const LOONGARCH64Instr* i,
       case LAin_LI:
          addHRegUse(u, HRmWrite, i->LAin.LI.dst);
          break;
+      case LAin_Un:
+         addHRegUse(u, HRmRead, i->LAin.Unary.src);
+         addHRegUse(u, HRmWrite, i->LAin.Unary.dst);
+         break;
       default:
          ppLOONGARCH64Instr(i, mode64);
          vpanic("getRegUsage_LOONGARCH64Instr");
@@ -422,6 +469,10 @@ void mapRegs_LOONGARCH64Instr ( HRegRemap* m, LOONGARCH64Instr* i,
    switch (i->tag) {
       case LAin_LI:
          mapReg(m, &i->LAin.LI.dst);
+         break;
+      case LAin_Un:
+         mapReg(m, &i->LAin.Unary.src);
+         mapReg(m, &i->LAin.Unary.dst);
          break;
       default:
          ppLOONGARCH64Instr(i, mode64);
@@ -725,6 +776,22 @@ static Bool is_LoadImm_EXACTLY4 ( UInt* p, HReg dst, ULong imm )
                  p[2] == expect[2] && p[3] == expect[3]);
 }
 
+static inline UInt* mkUnary ( UInt* p, LOONGARCH64UnOp op, HReg src, HReg dst )
+{
+   switch (op) {
+      case LAun_CLZ_W:
+      case LAun_CTZ_W:
+      case LAun_CLZ_D:
+      case LAun_CTZ_D:
+      case LAun_EXT_W_H:
+      case LAun_EXT_W_B:
+         *p++ = emit_op_rj_rd(op, iregEnc(src), iregEnc(dst));
+         return p;
+      default:
+         return NULL;
+   }
+}
+
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code.  If the emitted
@@ -750,6 +817,10 @@ Int emit_LOONGARCH64Instr ( /*MB_MOD*/Bool* is_profInc,
    switch (i->tag) {
       case LAin_LI:
          p = mkLoadImm(p, i->LAin.LI.dst, i->LAin.LI.imm);
+         break;
+      case LAin_Un:
+         p = mkUnary(p, i->LAin.Unary.op, i->LAin.Unary.src,
+                     i->LAin.Unary.dst);
          break;
       default:
          p = NULL;
