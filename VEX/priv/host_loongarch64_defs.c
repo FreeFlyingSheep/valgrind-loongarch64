@@ -385,6 +385,97 @@ static inline const HChar* showLOONGARCH64UnOp ( LOONGARCH64UnOp op )
    }
 }
 
+static inline const HChar* showLOONGARCH64BinOp ( LOONGARCH64BinOp op )
+{
+   switch (op) {
+      case LAbin_ADD_W:
+         return "add.w";
+      case LAbin_ADD_D:
+         return "add.d";
+      case LAbin_SUB_W:
+         return "sub.w";
+      case LAbin_SUB_D:
+         return "sub.d";
+      case LAbin_NOR:
+         return "nor";
+      case LAbin_AND:
+         return "and";
+      case LAbin_OR:
+         return "or";
+      case LAbin_XOR:
+         return "xor";
+      case LAbin_SLL_W:
+         return "sll.w";
+      case LAbin_SRL_W:
+         return "srl.w";
+      case LAbin_SRA_W:
+         return "sra.w";
+      case LAbin_SLL_D:
+         return "sll.d";
+      case LAbin_SRL_D:
+         return "srl.d";
+      case LAbin_SRA_D:
+         return "sra.d";
+      case LAbin_MUL_W:
+         return "mul.w";
+      case LAbin_MUL_D:
+         return "mul.d";
+      case LAbin_MULH_W:
+         return "mulh.w";
+      case LAbin_MULH_WU:
+         return "mulh.wu";
+      case LAbin_MULH_D:
+         return "mulh.d";
+      case LAbin_MULH_DU:
+         return "mulh.du";
+      case LAbin_MULW_D_W:
+         return "mulw.d.w";
+      case LAbin_MULW_D_WU:
+         return "mulw.d.wu";
+      case LAbin_DIV_W:
+         return "div.w";
+      case LAbin_MOD_W:
+         return "mod.w";
+      case LAbin_DIV_WU:
+         return "div.wu";
+      case LAbin_MOD_WU:
+         return "mod.wu";
+      case LAbin_DIV_D:
+         return "div.d";
+      case LAbin_MOD_D:
+         return "mod.d";
+      case LAbin_DIV_DU:
+         return "div.du";
+      case LAbin_MOD_DU:
+         return "mod.du";
+      case LAbin_SLLI_W:
+         return "slli.w";
+      case LAbin_SLLI_D:
+         return "slli.d";
+      case LAbin_SRLI_W:
+         return "srli.w";
+      case LAbin_SRLI_D:
+         return "srli.d";
+      case LAbin_SRAI_W:
+         return "srai.w";
+      case LAbin_SRAI_D:
+         return "srai.d";
+      case LAbin_ADDI_W:
+         return "addi.w";
+      case LAbin_ADDI_D:
+         return "addi.d";
+      case LAbin_ANDI:
+         return "andi";
+      case LAbin_ORI:
+         return "ori";
+      case LAbin_XORI:
+         return "xori";
+      default:
+         vpanic("showLOONGARCH64BinOp");
+         break;
+   }
+}
+
 LOONGARCH64Instr* LOONGARCH64Instr_LI ( ULong imm, HReg dst )
 {
    LOONGARCH64Instr* i = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
@@ -402,6 +493,19 @@ LOONGARCH64Instr* LOONGARCH64Instr_Unary ( LOONGARCH64UnOp op,
    i->LAin.Unary.op    = op;
    i->LAin.Unary.src   = src;
    i->LAin.Unary.dst   = dst;
+   return i;
+}
+
+LOONGARCH64Instr* LOONGARCH64Instr_Binary ( LOONGARCH64BinOp op,
+                                            LOONGARCH64RI* src2,
+                                            HReg src1, HReg dst )
+{
+   LOONGARCH64Instr* i = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
+   i->tag              = LAin_Bin;
+   i->LAin.Binary.op   = op;
+   i->LAin.Binary.src2 = src2;
+   i->LAin.Binary.src1 = src1;
+   i->LAin.Binary.dst  = dst;
    return i;
 }
 
@@ -423,6 +527,17 @@ static inline void ppUnary ( LOONGARCH64UnOp op, HReg src, HReg dst )
    ppHRegLOONGARCH64(src);
 }
 
+static inline void ppBinary ( LOONGARCH64BinOp op, LOONGARCH64RI* src2,
+                              HReg src1, HReg dst )
+{
+   vex_printf("%s ", showLOONGARCH64BinOp(op));
+   ppHRegLOONGARCH64(dst);
+   vex_printf(", ");
+   ppHRegLOONGARCH64(src1);
+   vex_printf(", ");
+   ppLOONGARCH64RI(src2);
+}
+
 void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
 {
    vassert(mode64 == True);
@@ -432,6 +547,10 @@ void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
          break;
       case LAin_Un:
          ppUnary(i->LAin.Unary.op, i->LAin.Unary.src, i->LAin.Unary.dst);
+         break;
+      case LAin_Bin:
+         ppBinary(i->LAin.Binary.op, i->LAin.Binary.src2,
+                  i->LAin.Binary.src1, i->LAin.Binary.dst);
          break;
       default:
          vpanic("ppLOONGARCH64Instr");
@@ -455,6 +574,11 @@ void getRegUsage_LOONGARCH64Instr ( HRegUsage* u, const LOONGARCH64Instr* i,
          addHRegUse(u, HRmRead, i->LAin.Unary.src);
          addHRegUse(u, HRmWrite, i->LAin.Unary.dst);
          break;
+      case LAin_Bin:
+         addRegUsage_LOONGARCH64RI(u, i->LAin.Binary.src2);
+         addHRegUse(u, HRmRead, i->LAin.Binary.src1);
+         addHRegUse(u, HRmWrite, i->LAin.Binary.dst);
+         break;
       default:
          ppLOONGARCH64Instr(i, mode64);
          vpanic("getRegUsage_LOONGARCH64Instr");
@@ -473,6 +597,11 @@ void mapRegs_LOONGARCH64Instr ( HRegRemap* m, LOONGARCH64Instr* i,
       case LAin_Un:
          mapReg(m, &i->LAin.Unary.src);
          mapReg(m, &i->LAin.Unary.dst);
+         break;
+      case LAin_Bin:
+         mapRegs_LOONGARCH64RI(m, i->LAin.Binary.src2);
+         mapReg(m, &i->LAin.Binary.src1);
+         mapReg(m, &i->LAin.Binary.dst);
          break;
       default:
          ppLOONGARCH64Instr(i, mode64);
@@ -792,6 +921,76 @@ static inline UInt* mkUnary ( UInt* p, LOONGARCH64UnOp op, HReg src, HReg dst )
    }
 }
 
+static inline UInt* mkBinary ( UInt* p, LOONGARCH64BinOp op,
+                               LOONGARCH64RI* src2, HReg src1, HReg dst )
+{
+   switch (op) {
+      case LAbin_ADD_W:
+      case LAbin_ADD_D:
+      case LAbin_SUB_W:
+      case LAbin_SUB_D:
+      case LAbin_NOR:
+      case LAbin_AND:
+      case LAbin_OR:
+      case LAbin_XOR:
+      case LAbin_SLL_W:
+      case LAbin_SRL_W:
+      case LAbin_SRA_W:
+      case LAbin_SLL_D:
+      case LAbin_SRL_D:
+      case LAbin_SRA_D:
+      case LAbin_MUL_W:
+      case LAbin_MUL_D:
+      case LAbin_MULH_W:
+      case LAbin_MULH_WU:
+      case LAbin_MULH_D:
+      case LAbin_MULH_DU:
+      case LAbin_MULW_D_W:
+      case LAbin_MULW_D_WU:
+      case LAbin_DIV_W:
+      case LAbin_MOD_W:
+      case LAbin_DIV_WU:
+      case LAbin_MOD_WU:
+      case LAbin_DIV_D:
+      case LAbin_MOD_D:
+      case LAbin_DIV_DU:
+      case LAbin_MOD_DU:
+         vassert(src2->tag == LAri_Reg);
+         *p++ = emit_op_rk_rj_rd(op, iregEnc(src2->LAri.R.reg),
+                                 iregEnc(src1), iregEnc(dst));
+         return p;
+      case LAbin_SLLI_W:
+      case LAbin_SRLI_W:
+      case LAbin_SRAI_W:
+         vassert(src2->tag == LAri_Imm);
+         *p++ = emit_op_ui5_rj_rd(op, src2->LAri.I.imm,
+                                  iregEnc(src1), iregEnc(dst));
+         return p;
+      case LAbin_SLLI_D:
+      case LAbin_SRLI_D:
+      case LAbin_SRAI_D:
+         vassert(src2->tag == LAri_Imm);
+         *p++ = emit_op_ui6_rj_rd(op, src2->LAri.I.imm,
+                                  iregEnc(src1), iregEnc(dst));
+         return p;
+      case LAbin_ADDI_W:
+      case LAbin_ADDI_D:
+         vassert(src2->tag == LAri_Imm);
+         *p++ = emit_op_si12_rj_rd(op, src2->LAri.I.imm,
+                                   iregEnc(src1), iregEnc(dst));
+         return p;
+      case LAbin_ANDI:
+      case LAbin_ORI:
+      case LAbin_XORI:
+         vassert(src2->tag == LAri_Imm);
+         *p++ = emit_op_ui12_rj_rd(op, src2->LAri.I.imm,
+                                   iregEnc(src1), iregEnc(dst));
+         return p;
+      default:
+         return NULL;
+   }
+}
+
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code.  If the emitted
@@ -821,6 +1020,10 @@ Int emit_LOONGARCH64Instr ( /*MB_MOD*/Bool* is_profInc,
       case LAin_Un:
          p = mkUnary(p, i->LAin.Unary.op, i->LAin.Unary.src,
                      i->LAin.Unary.dst);
+         break;
+      case LAin_Bin:
+         p = mkBinary(p, i->LAin.Binary.op, i->LAin.Binary.src2,
+                      i->LAin.Binary.src1, i->LAin.Binary.dst);
          break;
       default:
          p = NULL;
