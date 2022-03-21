@@ -558,6 +558,61 @@ static inline const HChar* showLOONGARCH64BarOp ( LOONGARCH64BarOp op )
    return ret;
 }
 
+static inline const HChar* showLOONGARCH64FpUnOp ( LOONGARCH64FpUnOp op )
+{
+   const HChar* ret;
+   switch (op) {
+      case LAfpun_FABS_S:
+         return "fabs.s";
+      case LAfpun_FABS_D:
+         return "fabs.d";
+      case LAfpun_FNEG_S:
+         return "fneg.s";
+      case LAfpun_FNEG_D:
+         return "fneg.d";
+      case LAfpun_FLOGB_S:
+         return "flogb.s";
+      case LAfpun_FLOGB_D:
+         return "flogb.d";
+      case LAfpun_FSQRT_S:
+         return "fsqrt.s";
+      case LAfpun_FSQRT_D:
+         return "fsqrt.d";
+      case LAfpun_FRSQRT_S:
+         return "frsqrt.s";
+      case LAfpun_FRSQRT_D:
+         return "frsqrt.d";
+      case LAfpun_FCVT_S_D:
+         return "fcvt.s.d";
+      case LAfpun_FCVT_D_S:
+         return "fcvt.d.s";
+      case LAfpun_FTINT_W_S:
+         return "ftint.w.s";
+      case LAfpun_FTINT_W_D:
+         return "ftint.w.d";
+      case LAfpun_FTINT_L_S:
+         return "ftint.l.s";
+      case LAfpun_FTINT_L_D:
+         return "ftint.l.d";
+      case LAfpun_FFINT_S_W:
+         return "ffint.s.w";
+      case LAfpun_FFINT_S_L:
+         return "ffint.s.l";
+      case LAfpun_FFINT_D_W:
+         return "ffint.d.w";
+      case LAfpun_FFINT_D_L:
+         return "ffint.d.l";
+      case LAfpun_FRINT_S:
+         return "frint.s";
+      case LAfpun_FRINT_D:
+         return "frint.d";
+      default:
+         vpanic("showLOONGARCH64FpUnOp");
+         break;
+   }
+   return ret;
+}
+
 LOONGARCH64Instr* LOONGARCH64Instr_LI ( ULong imm, HReg dst )
 {
    LOONGARCH64Instr* i = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
@@ -634,6 +689,17 @@ LOONGARCH64Instr* LOONGARCH64Instr_Bar ( LOONGARCH64BarOp op, UShort hint )
    return i;
 }
 
+LOONGARCH64Instr* LOONGARCH64Instr_FpUnary ( LOONGARCH64FpUnOp op,
+                                             HReg src, HReg dst )
+{
+   LOONGARCH64Instr* i = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
+   i->tag              = LAin_FpUn;
+   i->LAin.FpUnary.op  = op;
+   i->LAin.FpUnary.src = src;
+   i->LAin.FpUnary.dst = dst;
+   return i;
+}
+
 
 /* -------- Pretty Print instructions ------------- */
 
@@ -695,6 +761,14 @@ static inline void ppBar ( LOONGARCH64BarOp op, UShort hint )
    vex_printf("%s %u", showLOONGARCH64BarOp(op), (UInt)hint);
 }
 
+static inline void ppFpUnary ( LOONGARCH64FpUnOp op, HReg src, HReg dst )
+{
+   vex_printf("%s ", showLOONGARCH64FpUnOp(op));
+   ppHRegLOONGARCH64(dst);
+   vex_printf(", ");
+   ppHRegLOONGARCH64(src);
+}
+
 void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
 {
    vassert(mode64 == True);
@@ -720,6 +794,10 @@ void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
          break;
       case LAin_Bar:
          ppBar(i->LAin.Bar.op, i->LAin.Bar.hint);
+         break;
+      case LAin_FpUn:
+         ppFpUnary(i->LAin.FpUnary.op, i->LAin.FpUnary.src,
+                   i->LAin.FpUnary.dst);
          break;
       default:
          vpanic("ppLOONGARCH64Instr");
@@ -766,6 +844,10 @@ void getRegUsage_LOONGARCH64Instr ( HRegUsage* u, const LOONGARCH64Instr* i,
       case LAin_Bar:
          /* No regs. */
          break;
+      case LAin_FpUn:
+         addHRegUse(u, HRmRead, i->LAin.FpUnary.src);
+         addHRegUse(u, HRmWrite, i->LAin.FpUnary.dst);
+         break;
       default:
          ppLOONGARCH64Instr(i, mode64);
          vpanic("getRegUsage_LOONGARCH64Instr");
@@ -804,6 +886,10 @@ void mapRegs_LOONGARCH64Instr ( HRegRemap* m, LOONGARCH64Instr* i,
          break;
       case LAin_Bar:
          /* No regs. */
+         break;
+      case LAin_FpUn:
+         mapReg(m, &i->LAin.FpUnary.src);
+         mapReg(m, &i->LAin.FpUnary.dst);
          break;
       default:
          ppLOONGARCH64Instr(i, mode64);
@@ -1273,6 +1359,38 @@ static inline UInt* mkBar ( UInt* p, LOONGARCH64BarOp op, UShort hint )
    }
 }
 
+static inline UInt* mkFpUnary ( UInt* p, LOONGARCH64FpUnOp op, HReg src, HReg dst )
+{
+   switch (op) {
+      case LAfpun_FABS_S:
+      case LAfpun_FABS_D:
+      case LAfpun_FNEG_S:
+      case LAfpun_FNEG_D:
+      case LAfpun_FLOGB_S:
+      case LAfpun_FLOGB_D:
+      case LAfpun_FSQRT_S:
+      case LAfpun_FSQRT_D:
+      case LAfpun_FRSQRT_S:
+      case LAfpun_FRSQRT_D:
+      case LAfpun_FCVT_S_D:
+      case LAfpun_FCVT_D_S:
+      case LAfpun_FTINT_W_S:
+      case LAfpun_FTINT_W_D:
+      case LAfpun_FTINT_L_S:
+      case LAfpun_FTINT_L_D:
+      case LAfpun_FFINT_S_W:
+      case LAfpun_FFINT_S_L:
+      case LAfpun_FFINT_D_W:
+      case LAfpun_FFINT_D_L:
+      case LAfpun_FRINT_S:
+      case LAfpun_FRINT_D:
+         *p++ = emit_op_fj_fd(op, fregEnc(src), fregEnc(dst));
+         return p;
+      default:
+         return NULL;
+   }
+}
+
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code.  If the emitted
@@ -1320,6 +1438,10 @@ Int emit_LOONGARCH64Instr ( /*MB_MOD*/Bool* is_profInc,
          break;
       case LAin_Bar:
          p = mkBar(p, i->LAin.Bar.op, i->LAin.Bar.hint);
+         break;
+      case LAin_FpUn:
+         p = mkFpUnary(p, i->LAin.FpUnary.op, i->LAin.FpUnary.src,
+                       i->LAin.FpUnary.dst);
          break;
       default:
          p = NULL;
