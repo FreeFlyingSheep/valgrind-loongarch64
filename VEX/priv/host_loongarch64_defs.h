@@ -395,7 +395,8 @@ typedef enum {
    LAin_FpCmp,      /* floating point compare */
 
    /* Pseudo-insn */
-   LAin_Cas         /* compare and swap */
+   LAin_Cas,        /* compare and swap */
+   LAin_Cmp         /* word compare */
 } LOONGARCH64InstrTag;
 
 typedef struct {
@@ -482,6 +483,12 @@ typedef struct {
          HReg                 data;
          Bool                 size64;
       } Cas;
+      struct {
+         LOONGARCH64CondCode  cond;
+         HReg                 dst;
+         HReg                 src1;
+         HReg                 src2;
+      } Cmp;
    } LAin;
 } LOONGARCH64Instr;
 
@@ -525,6 +532,9 @@ extern LOONGARCH64Instr* LOONGARCH64Instr_FpCmp     ( LOONGARCH64FpCmpOp op,
 extern LOONGARCH64Instr* LOONGARCH64Instr_Cas       ( HReg old, HReg addr,
                                                       HReg expd, HReg data,
                                                       Bool size64 );
+extern LOONGARCH64Instr* LOONGARCH64Instr_Cmp       ( LOONGARCH64CondCode cond,
+                                                      HReg src2, HReg src1,
+                                                      HReg dst );
 
 extern void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 );
 
