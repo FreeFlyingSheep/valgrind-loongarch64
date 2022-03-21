@@ -413,10 +413,11 @@ typedef enum {
       condition (which could be LAcc_AL). */
    LAin_Call,       /* call */
 
-   /* The following 3 insns are mandated by translation chaining */
+   /* The following 4 insns are mandated by translation chaining */
    LAin_XDirect,    /* direct transfer to GA */
    LAin_XIndir,     /* indirect transfer to GA */
-   LAin_XAssisted   /* assisted transfer to GA */
+   LAin_XAssisted,  /* assisted transfer to GA */
+   LAin_EvCheck     /* Event check */
 } LOONGARCH64InstrTag;
 
 typedef struct {
@@ -539,6 +540,10 @@ typedef struct {
          HReg                 cond;
          IRJumpKind           jk;
       } XAssisted;
+      struct {
+         LOONGARCH64AMode*    amCounter;
+         LOONGARCH64AMode*    amFailAddr;
+      } EvCheck;
    } LAin;
 } LOONGARCH64Instr;
 
@@ -598,6 +603,8 @@ extern LOONGARCH64Instr* LOONGARCH64Instr_XIndir    ( HReg dstGA,
 extern LOONGARCH64Instr* LOONGARCH64Instr_XAssisted ( HReg dstGA,
                                                       LOONGARCH64AMode* amPC,
                                                       HReg cond, IRJumpKind jk );
+extern LOONGARCH64Instr* LOONGARCH64Instr_EvCheck   ( LOONGARCH64AMode* amCounter,
+                                                      LOONGARCH64AMode* amFailAddr );
 
 extern void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 );
 

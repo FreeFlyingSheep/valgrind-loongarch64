@@ -1006,6 +1006,16 @@ LOONGARCH64Instr* LOONGARCH64Instr_XAssisted ( HReg dstGA,
    return i;
 }
 
+LOONGARCH64Instr* LOONGARCH64Instr_EvCheck ( LOONGARCH64AMode* amCounter,
+                                             LOONGARCH64AMode* amFailAddr )
+{
+   LOONGARCH64Instr* i        = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
+   i->tag                     = LAin_EvCheck;
+   i->LAin.EvCheck.amCounter  = amCounter;
+   i->LAin.EvCheck.amFailAddr = amFailAddr;
+   return i;
+}
+
 
 /* -------- Pretty Print instructions ------------- */
 
@@ -1266,6 +1276,22 @@ static inline void ppXAssisted ( HReg dstGA, LOONGARCH64AMode* amPC,
       vex_printf(" }");
 }
 
+static inline void ppEvCheck ( LOONGARCH64AMode* amCounter,
+                               LOONGARCH64AMode* amFailAddr )
+{
+   vex_printf("(evCheck) ");
+   vex_printf("ld.w $t0, ");
+   ppLOONGARCH64AMode(amCounter);
+   vex_printf("; addi.d $t0, $t0, -1; ");
+   vex_printf("st.w $t0, ");
+   ppLOONGARCH64AMode(amCounter);
+   vex_printf("; bge $t0, $zero, nofail; ");
+   vex_printf("ld.d $t0, ");
+   ppLOONGARCH64AMode(amFailAddr);
+   vex_printf("; jirl $ra, $t0, 0");
+   vex_printf("; nofail:");
+}
+
 void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
 {
    vassert(mode64 == True);
@@ -1348,6 +1374,9 @@ void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
       case LAin_XAssisted:
          ppXAssisted(i->LAin.XAssisted.dstGA, i->LAin.XAssisted.amPC,
                      i->LAin.XAssisted.cond, i->LAin.XAssisted.jk);
+         break;
+      case LAin_EvCheck:
+         ppEvCheck(i->LAin.EvCheck.amCounter, i->LAin.EvCheck.amFailAddr);
          break;
       default:
          vpanic("ppLOONGARCH64Instr");
@@ -1505,6 +1534,13 @@ void getRegUsage_LOONGARCH64Instr ( HRegUsage* u, const LOONGARCH64Instr* i,
             addHRegUse(u, HRmRead, i->LAin.XAssisted.cond);
          addHRegUse(u, HRmWrite, hregT0()); /* unavail to RA */
          break;
+      case LAin_EvCheck:
+         /* We expect both amodes only to mention $r31, so this is in
+            fact pointless, since $r31 isn't allocatable, but anyway.. */
+         addRegUsage_LOONGARCH64AMode(u, i->LAin.EvCheck.amCounter);
+         addRegUsage_LOONGARCH64AMode(u, i->LAin.EvCheck.amFailAddr);
+         addHRegUse(u, HRmWrite, hregT0()); /* unavail to RA */
+         break;
       default:
          ppLOONGARCH64Instr(i, mode64);
          vpanic("getRegUsage_LOONGARCH64Instr");
@@ -1619,6 +1655,12 @@ void mapRegs_LOONGARCH64Instr ( HRegRemap* m, LOONGARCH64Instr* i,
          mapRegs_LOONGARCH64AMode(m, i->LAin.XAssisted.amPC);
          if (!hregIsInvalid(i->LAin.XAssisted.cond))
             mapReg(m, &i->LAin.XAssisted.cond);
+         break;
+      case LAin_EvCheck:
+         /* We expect both amodes only to mention $r31, so this is in
+            fact pointless, since $r31 isn't allocatable, but anyway.. */
+         mapRegs_LOONGARCH64AMode(m, i->LAin.EvCheck.amCounter);
+         mapRegs_LOONGARCH64AMode(m, i->LAin.EvCheck.amFailAddr);
          break;
       default:
          ppLOONGARCH64Instr(i, mode64);
@@ -2632,6 +2674,32 @@ static inline UInt* mkXAssisted ( UInt* p, HReg dstGA, LOONGARCH64AMode* amPC,
    return p;
 }
 
+static inline UInt* mkEvCheck ( UInt* p, LOONGARCH64AMode* amCounter,
+                                LOONGARCH64AMode* amFailAddr )
+{
+   UInt* p0 = p;
+
+   /*
+         ld.w   $t0, amCounter
+         addi.d $t0, $t0, -1
+         st.w   $t0, amCounter
+         bge    $t0, $zero, nofail
+         ld.d   $t0, amFailAddr
+         jirl   $ra, $t0, 0
+      nofail:
+   */
+   p = mkLoad(p, LAload_LD_W, amCounter, hregT0());
+   *p++ = emit_op_si12_rj_rd(LAbin_ADDI_D, -1 & 0xfff, 12, 12);
+   p = mkStore(p, LAstore_ST_W, amCounter, hregT0());
+   *p++ = emit_op_offs16_rj_rd(LAextra_BGE, 3, 12, 0);
+   p = mkLoad(p, LAload_LD_W, amFailAddr, hregT0());
+   *p++ = emit_op_offs16_rj_rd(LAextra_JIRL, 0, 12, 1);
+
+   /* Crosscheck */
+   vassert(evCheckSzB_LOONGARCH64() == (UChar*)p - (UChar*)p0);
+   return p;
+}
+
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code.  If the emitted
@@ -2741,6 +2809,10 @@ Int emit_LOONGARCH64Instr ( /*MB_MOD*/Bool* is_profInc,
                          i->LAin.XAssisted.cond, i->LAin.XAssisted.jk,
                          disp_cp_xassisted);
          break;
+      case LAin_EvCheck:
+         p = mkEvCheck(p, i->LAin.EvCheck.amCounter,
+                       i->LAin.EvCheck.amFailAddr);
+         break;
       default:
          p = NULL;
          break;
@@ -2760,7 +2832,7 @@ Int emit_LOONGARCH64Instr ( /*MB_MOD*/Bool* is_profInc,
    crosschecks what this returns, so we can tell if we're inconsistent. */
 Int evCheckSzB_LOONGARCH64 ( void )
 {
-   return 0;
+   return 6 * 4; // 6 insns
 }
 
 /* NB: what goes on here has to be very closely coordinated with the
