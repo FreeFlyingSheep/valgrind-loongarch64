@@ -713,6 +713,31 @@ static inline const HChar* showLOONGARCH64FpStoreOp ( LOONGARCH64FpStoreOp op )
    }
 }
 
+static inline const HChar* showLOONGARCH64FpMoveOp ( LOONGARCH64FpMoveOp op )
+{
+   switch (op) {
+      case LAfpmove_FMOV_S:
+         return "fmov.s";
+      case LAfpmove_FMOV_D:
+         return "fmov.d";
+      case LAfpmove_MOVGR2FR_W:
+         return "movgr2fr.w";
+      case LAfpmove_MOVGR2FR_D:
+         return "movgr2fr.d";
+      case LAfpmove_MOVFR2GR_S:
+         return "movfr2gr.s";
+      case LAfpmove_MOVFR2GR_D:
+         return "movfr2gr.d";
+      case LAfpmove_MOVGR2FCSR:
+         return "movgr2fcsr";
+      case LAfpmove_MOVFCSR2GR:
+         return "movfcsr2gr";
+      default:
+         vpanic("showLOONGARCH64FpMoveOp");
+         break;
+   }
+}
+
 LOONGARCH64Instr* LOONGARCH64Instr_LI ( ULong imm, HReg dst )
 {
    LOONGARCH64Instr* i = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
@@ -848,6 +873,17 @@ LOONGARCH64Instr* LOONGARCH64Instr_FpStore ( LOONGARCH64FpStoreOp op,
    return i;
 }
 
+LOONGARCH64Instr* LOONGARCH64Instr_FpMove ( LOONGARCH64FpMoveOp op,
+                                            HReg src, HReg dst )
+{
+   LOONGARCH64Instr* i = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
+   i->tag              = LAin_FpMove;
+   i->LAin.FpMove.op   = op;
+   i->LAin.FpMove.src  = src;
+   i->LAin.FpMove.dst  = dst;
+   return i;
+}
+
 
 /* -------- Pretty Print instructions ------------- */
 
@@ -959,6 +995,14 @@ static inline void ppFpStore ( LOONGARCH64FpStoreOp op, LOONGARCH64AMode* dst,
    ppLOONGARCH64AMode(dst);
 }
 
+static inline void ppFpMove ( LOONGARCH64FpMoveOp op, HReg src, HReg dst )
+{
+   vex_printf("%s ", showLOONGARCH64FpMoveOp(op));
+   ppHRegLOONGARCH64(dst);
+   vex_printf(", ");
+   ppHRegLOONGARCH64(src);
+}
+
 void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
 {
    vassert(mode64 == True);
@@ -1004,6 +1048,10 @@ void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
       case LAin_FpStore:
          ppFpStore(i->LAin.FpStore.op, i->LAin.FpStore.dst,
                    i->LAin.FpStore.src);
+         break;
+      case LAin_FpMove:
+         ppFpMove(i->LAin.FpMove.op, i->LAin.FpMove.src,
+                   i->LAin.FpMove.dst);
          break;
       default:
          vpanic("ppLOONGARCH64Instr");
@@ -1073,6 +1121,10 @@ void getRegUsage_LOONGARCH64Instr ( HRegUsage* u, const LOONGARCH64Instr* i,
          addRegUsage_LOONGARCH64AMode(u, i->LAin.FpStore.dst);
          addHRegUse(u, HRmRead, i->LAin.FpStore.src);
          break;
+      case LAin_FpMove:
+         addHRegUse(u, HRmRead, i->LAin.FpMove.src);
+         addHRegUse(u, HRmWrite, i->LAin.FpMove.dst);
+         break;
       default:
          ppLOONGARCH64Instr(i, mode64);
          vpanic("getRegUsage_LOONGARCH64Instr");
@@ -1134,6 +1186,10 @@ void mapRegs_LOONGARCH64Instr ( HRegRemap* m, LOONGARCH64Instr* i,
       case LAin_FpStore:
          mapRegs_LOONGARCH64AMode(m, i->LAin.FpStore.dst);
          mapReg(m, &i->LAin.FpStore.src);
+         break;
+      case LAin_FpMove:
+         mapReg(m, &i->LAin.FpMove.src);
+         mapReg(m, &i->LAin.FpMove.dst);
          break;
       default:
          ppLOONGARCH64Instr(i, mode64);
@@ -1722,6 +1778,32 @@ static inline UInt* mkFpStore ( UInt* p, LOONGARCH64FpStoreOp op,
    }
 }
 
+static inline UInt* mkFpMove ( UInt* p, LOONGARCH64FpMoveOp op, HReg src, HReg dst )
+{
+   switch (op) {
+      case LAfpmove_FMOV_S:
+      case LAfpmove_FMOV_D:
+         *p++ = emit_op_fj_fd(op, fregEnc(src), fregEnc(dst));
+         return p;
+      case LAfpmove_MOVGR2FR_W:
+      case LAfpmove_MOVGR2FR_D:
+         *p++ = emit_op_rj_fd(op, iregEnc(src), fregEnc(dst));
+         return p;
+      case LAfpmove_MOVFR2GR_S:
+      case LAfpmove_MOVFR2GR_D:
+         *p++ = emit_op_fj_rd(op, fregEnc(src), iregEnc(dst));
+         return p;
+      case LAfpmove_MOVGR2FCSR:
+         *p++ = emit_op_rj_fcsr(op, iregEnc(src), fcsrEnc(dst));
+         return p;
+      case LAfpmove_MOVFCSR2GR:
+         *p++ = emit_op_fcsr_rd(op, fcsrEnc(src), iregEnc(dst));
+         return p;
+      default:
+         return NULL;
+   }
+}
+
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code.  If the emitted
@@ -1790,6 +1872,10 @@ Int emit_LOONGARCH64Instr ( /*MB_MOD*/Bool* is_profInc,
       case LAin_FpStore:
          p = mkFpStore(p, i->LAin.FpStore.op, i->LAin.FpStore.dst,
                        i->LAin.FpStore.src);
+         break;
+      case LAin_FpMove:
+         p = mkFpMove(p, i->LAin.FpMove.op, i->LAin.FpMove.src,
+                      i->LAin.FpMove.dst);
          break;
       default:
          p = NULL;
