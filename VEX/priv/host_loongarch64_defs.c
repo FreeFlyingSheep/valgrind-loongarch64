@@ -476,6 +476,56 @@ static inline const HChar* showLOONGARCH64BinOp ( LOONGARCH64BinOp op )
    }
 }
 
+static inline const HChar* showLOONGARCH64LoadOp ( LOONGARCH64LoadOp op )
+{
+   switch (op) {
+      case LAload_LD_D:
+         return "ld.d";
+      case LAload_LD_BU:
+         return "ld.bu";
+      case LAload_LD_HU:
+         return "ld.hu";
+      case LAload_LD_WU:
+         return "ld.wu";
+      case LAload_LDX_D:
+         return "ldx.d";
+      case LAload_LDX_BU:
+         return "ldx.bu";
+      case LAload_LDX_HU:
+         return "ldx.hu";
+      case LAload_LDX_WU:
+         return "ldx.wu";
+      default:
+         vpanic("LOONGARCH64LoadOp");
+         break;
+   }
+}
+
+static inline const HChar* showLOONGARCH64StoreOp ( LOONGARCH64StoreOp op )
+{
+   switch (op) {
+      case LAstore_ST_B:
+         return "st.b";
+      case LAstore_ST_H:
+         return "st.h";
+      case LAstore_ST_W:
+         return "st.w";
+      case LAstore_ST_D:
+         return "st.d";
+      case LAstore_STX_B:
+         return "stx.b";
+      case LAstore_STX_H:
+         return "stx.h";
+      case LAstore_STX_W:
+         return "stx.w";
+      case LAstore_STX_D:
+         return "stx.d";
+      default:
+         vpanic("LOONGARCH64StoreOp");
+         break;
+   }
+}
+
 LOONGARCH64Instr* LOONGARCH64Instr_LI ( ULong imm, HReg dst )
 {
    LOONGARCH64Instr* i = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
@@ -509,6 +559,28 @@ LOONGARCH64Instr* LOONGARCH64Instr_Binary ( LOONGARCH64BinOp op,
    return i;
 }
 
+LOONGARCH64Instr* LOONGARCH64Instr_Load ( LOONGARCH64LoadOp op,
+                                          LOONGARCH64AMode* src, HReg dst )
+{
+   LOONGARCH64Instr* i = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
+   i->tag              = LAin_Load;
+   i->LAin.Load.op     = op;
+   i->LAin.Load.src    = src;
+   i->LAin.Load.dst    = dst;
+   return i;
+}
+
+LOONGARCH64Instr* LOONGARCH64Instr_Store ( LOONGARCH64StoreOp op,
+                                           LOONGARCH64AMode* dst, HReg src )
+{
+   LOONGARCH64Instr* i = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
+   i->tag              = LAin_Store;
+   i->LAin.Store.op    = op;
+   i->LAin.Store.dst   = dst;
+   i->LAin.Store.src   = src;
+   return i;
+}
+
 
 /* -------- Pretty Print instructions ------------- */
 
@@ -538,6 +610,24 @@ static inline void ppBinary ( LOONGARCH64BinOp op, LOONGARCH64RI* src2,
    ppLOONGARCH64RI(src2);
 }
 
+static inline void ppLoad ( LOONGARCH64LoadOp op, LOONGARCH64AMode* src,
+                            HReg dst )
+{
+   vex_printf("%s ", showLOONGARCH64LoadOp(op));
+   ppHRegLOONGARCH64(dst);
+   vex_printf(", ");
+   ppLOONGARCH64AMode(src);
+}
+
+static inline void ppStore ( LOONGARCH64StoreOp op, LOONGARCH64AMode* dst,
+                             HReg src )
+{
+   vex_printf("%s ", showLOONGARCH64StoreOp(op));
+   ppHRegLOONGARCH64(src);
+   vex_printf(", ");
+   ppLOONGARCH64AMode(dst);
+}
+
 void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
 {
    vassert(mode64 == True);
@@ -551,6 +641,12 @@ void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
       case LAin_Bin:
          ppBinary(i->LAin.Binary.op, i->LAin.Binary.src2,
                   i->LAin.Binary.src1, i->LAin.Binary.dst);
+         break;
+      case LAin_Load:
+         ppLoad(i->LAin.Load.op, i->LAin.Load.src, i->LAin.Load.dst);
+         break;
+      case LAin_Store:
+         ppStore(i->LAin.Store.op, i->LAin.Store.dst, i->LAin.Store.src);
          break;
       default:
          vpanic("ppLOONGARCH64Instr");
@@ -579,6 +675,14 @@ void getRegUsage_LOONGARCH64Instr ( HRegUsage* u, const LOONGARCH64Instr* i,
          addHRegUse(u, HRmRead, i->LAin.Binary.src1);
          addHRegUse(u, HRmWrite, i->LAin.Binary.dst);
          break;
+      case LAin_Load:
+         addRegUsage_LOONGARCH64AMode(u, i->LAin.Load.src);
+         addHRegUse(u, HRmWrite, i->LAin.Load.dst);
+         break;
+      case LAin_Store:
+         addRegUsage_LOONGARCH64AMode(u, i->LAin.Store.dst);
+         addHRegUse(u, HRmRead, i->LAin.Store.src);
+         break;
       default:
          ppLOONGARCH64Instr(i, mode64);
          vpanic("getRegUsage_LOONGARCH64Instr");
@@ -602,6 +706,14 @@ void mapRegs_LOONGARCH64Instr ( HRegRemap* m, LOONGARCH64Instr* i,
          mapRegs_LOONGARCH64RI(m, i->LAin.Binary.src2);
          mapReg(m, &i->LAin.Binary.src1);
          mapReg(m, &i->LAin.Binary.dst);
+         break;
+      case LAin_Load:
+         mapRegs_LOONGARCH64AMode(m, i->LAin.Load.src);
+         mapReg(m, &i->LAin.Load.dst);
+         break;
+      case LAin_Store:
+         mapRegs_LOONGARCH64AMode(m, i->LAin.Store.dst);
+         mapReg(m, &i->LAin.Store.src);
          break;
       default:
          ppLOONGARCH64Instr(i, mode64);
@@ -991,6 +1103,57 @@ static inline UInt* mkBinary ( UInt* p, LOONGARCH64BinOp op,
    }
 }
 
+static UInt* mkLoad ( UInt* p, LOONGARCH64LoadOp op,
+                      LOONGARCH64AMode* src, HReg dst )
+{
+   switch (op) {
+      case LAload_LD_W:
+      case LAload_LD_D:
+      case LAload_LD_BU:
+      case LAload_LD_HU:
+      case LAload_LD_WU:
+         vassert(src->tag == LAam_RI);
+         *p++ = emit_op_si12_rj_rd(op, src->LAam.RI.index,
+                                   iregEnc(src->LAam.RI.base), iregEnc(dst));
+         return p;
+      case LAload_LDX_D:
+      case LAload_LDX_BU:
+      case LAload_LDX_HU:
+      case LAload_LDX_WU:
+         vassert(src->tag == LAam_RR);
+         *p++ = emit_op_rk_rj_rd(op, iregEnc(src->LAam.RR.index),
+                                 iregEnc(src->LAam.RR.base), iregEnc(dst));
+         return p;
+      default:
+         return NULL;
+   }
+}
+
+static UInt* mkStore ( UInt* p, LOONGARCH64StoreOp op,
+                       LOONGARCH64AMode* dst, HReg src )
+{
+   switch (op) {
+      case LAstore_ST_B:
+      case LAstore_ST_H:
+      case LAstore_ST_W:
+      case LAstore_ST_D:
+         vassert(dst->tag == LAam_RI);
+         *p++ = emit_op_si12_rj_rd(op, dst->LAam.RI.index,
+                                   iregEnc(dst->LAam.RI.base), iregEnc(src));
+         return p;
+      case LAstore_STX_B:
+      case LAstore_STX_H:
+      case LAstore_STX_W:
+      case LAstore_STX_D:
+         vassert(dst->tag == LAam_RR);
+         *p++ = emit_op_rk_rj_rd(op, iregEnc(dst->LAam.RR.index),
+                                 iregEnc(dst->LAam.RR.base), iregEnc(src));
+         return p;
+      default:
+         return NULL;
+   }
+}
+
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code.  If the emitted
@@ -1024,6 +1187,14 @@ Int emit_LOONGARCH64Instr ( /*MB_MOD*/Bool* is_profInc,
       case LAin_Bin:
          p = mkBinary(p, i->LAin.Binary.op, i->LAin.Binary.src2,
                       i->LAin.Binary.src1, i->LAin.Binary.dst);
+         break;
+      case LAin_Load:
+         p = mkLoad(p, i->LAin.Load.op, i->LAin.Load.src,
+                    i->LAin.Load.dst);
+         break;
+      case LAin_Store:
+         p = mkStore(p, i->LAin.Store.op, i->LAin.Store.dst,
+                     i->LAin.Store.src);
          break;
       default:
          p = NULL;
