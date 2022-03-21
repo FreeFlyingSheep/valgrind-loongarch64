@@ -919,6 +919,19 @@ LOONGARCH64Instr* LOONGARCH64Instr_FpCmp ( LOONGARCH64FpCmpOp op, HReg src2,
    return i;
 }
 
+LOONGARCH64Instr* LOONGARCH64Instr_Cas ( HReg old, HReg addr, HReg expd,
+                                         HReg data, Bool size64 )
+{
+   LOONGARCH64Instr* i = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
+   i->tag              = LAin_Cas;
+   i->LAin.Cas.old     = old;
+   i->LAin.Cas.addr    = addr;
+   i->LAin.Cas.expd    = expd;
+   i->LAin.Cas.data    = data;
+   i->LAin.Cas.size64  = size64;
+   return i;
+}
+
 
 /* -------- Pretty Print instructions ------------- */
 
@@ -1051,6 +1064,19 @@ static inline void ppFpCmp ( LOONGARCH64FpCmpOp op, HReg src2,
    vex_printf(", $fcc0");
 }
 
+static inline void ppCas ( HReg old, HReg addr, HReg expd,
+                           HReg data, Bool size64)
+{
+   ppHRegLOONGARCH64(old);
+   vex_printf(" = cas(%dbit)(", size64 ? 64 : 32);
+   ppHRegLOONGARCH64(expd);
+   vex_printf(", ");
+   ppHRegLOONGARCH64(data);
+   vex_printf(" -> ");
+   ppHRegLOONGARCH64(addr);
+   vex_printf(")");
+}
+
 void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
 {
    vassert(mode64 == True);
@@ -1104,6 +1130,10 @@ void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
       case LAin_FpCmp:
          ppFpCmp(i->LAin.FpCmp.op, i->LAin.FpCmp.src2,
                  i->LAin.FpCmp.src1, i->LAin.FpCmp.dst);
+         break;
+      case LAin_Cas:
+         ppCas(i->LAin.Cas.old, i->LAin.Cas.addr, i->LAin.Cas.expd,
+               i->LAin.Cas.data, i->LAin.Cas.size64);
          break;
       default:
          vpanic("ppLOONGARCH64Instr");
@@ -1182,6 +1212,12 @@ void getRegUsage_LOONGARCH64Instr ( HRegUsage* u, const LOONGARCH64Instr* i,
          addHRegUse(u, HRmRead, i->LAin.FpCmp.src1);
          addHRegUse(u, HRmWrite, i->LAin.FpCmp.dst);
          break;
+      case LAin_Cas:
+         addHRegUse(u, HRmWrite, i->LAin.Cas.old);
+         addHRegUse(u, HRmRead, i->LAin.Cas.addr);
+         addHRegUse(u, HRmRead, i->LAin.Cas.expd);
+         addHRegUse(u, HRmModify, i->LAin.Cas.data);
+         break;
       default:
          ppLOONGARCH64Instr(i, mode64);
          vpanic("getRegUsage_LOONGARCH64Instr");
@@ -1252,6 +1288,12 @@ void mapRegs_LOONGARCH64Instr ( HRegRemap* m, LOONGARCH64Instr* i,
          mapReg(m, &i->LAin.FpCmp.src2);
          mapReg(m, &i->LAin.FpCmp.src1);
          mapReg(m, &i->LAin.FpCmp.dst);
+         break;
+      case LAin_Cas:
+         mapReg(m, &i->LAin.Cas.old);
+         mapReg(m, &i->LAin.Cas.addr);
+         mapReg(m, &i->LAin.Cas.expd);
+         mapReg(m, &i->LAin.Cas.data);
          break;
       default:
          ppLOONGARCH64Instr(i, mode64);
@@ -1888,6 +1930,51 @@ static inline UInt* mkFpCmp ( UInt* p, LOONGARCH64FpCmpOp op, HReg src2,
    }
 }
 
+static inline UInt* mkCas ( UInt* p, HReg old, HReg addr, HReg expd,
+                            HReg data, Bool size64 )
+{
+   /*
+         ll.[wd] old, addr, 0
+         bne     old, expd, barrier
+         or      $t0, data, $zero
+         sc.[wd] $t0, addr, 0
+         beq     $t0, zero, fail
+         or      old, expd, $zero
+         b       end
+      barrier:
+         dbar    0
+      fail:
+         or      old, data, $zero
+      end:
+    */
+   UInt o = iregEnc(old);
+   UInt a = iregEnc(addr);
+   UInt e = iregEnc(expd);
+   UInt d = iregEnc(data);
+   UInt t = 12;
+   UInt z = 0;
+
+   if (size64) {
+      *p++ = emit_op_si14_rj_rd(LAllsc_LL_D, 0, a, o);
+   } else {
+      *p++ = emit_op_ui6_rj_rd(LAbin_SLLI_W, 0, e, e); // Sign-extend expd
+      *p++ = emit_op_si14_rj_rd(LAllsc_LL_W, 0, a, o);
+   }
+   *p++ = emit_op_offs16_rj_rd(LAextra_BNE, 6, o, e);
+   *p++ = emit_op_rk_rj_rd(LAbin_OR, z, d, t);
+   if (size64) {
+      *p++ = emit_op_si14_rj_rd(LAllsc_SC_D, 0, a, t);
+   } else {
+      *p++ = emit_op_si14_rj_rd(LAllsc_SC_W, 0, a, t);
+   }
+   *p++ = emit_op_offs16_rj_rd(LAextra_BEQ, 4, t, z);
+   *p++ = emit_op_rk_rj_rd(LAbin_OR, z, e, o);
+   *p++ = emit_op_offs26(LAextra_B, 3);
+   *p++ = emit_op_hint15(LAbar_DBAR, 0);
+   *p++ = emit_op_rk_rj_rd(LAbin_OR, z, d, o);
+   return p;
+}
+
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code.  If the emitted
@@ -1964,6 +2051,10 @@ Int emit_LOONGARCH64Instr ( /*MB_MOD*/Bool* is_profInc,
       case LAin_FpCmp:
          p = mkFpCmp(p, i->LAin.FpCmp.op, i->LAin.FpCmp.src2,
                      i->LAin.FpCmp.src1, i->LAin.FpCmp.dst);
+         break;
+      case LAin_Cas:
+         p = mkCas(p, i->LAin.Cas.old, i->LAin.Cas.addr, i->LAin.Cas.expd,
+                   i->LAin.Cas.data, i->LAin.Cas.size64);
          break;
       default:
          p = NULL;
