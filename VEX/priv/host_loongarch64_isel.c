@@ -583,6 +583,32 @@ static void iselStmtPut ( ISelEnv* env, IRStmt* stmt )
    }
 }
 
+static void iselStmtTmp ( ISelEnv* env, IRStmt* stmt )
+{
+   IRTemp tmp = stmt->Ist.WrTmp.tmp;
+   IRType ty  = typeOfIRTemp(env->type_env, tmp);
+
+   if (ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32 || ty == Ity_I64) {
+      HReg dst = lookupIRTemp(env, tmp);
+      HReg src = iselIntExpr_R(env, stmt->Ist.WrTmp.data);
+      addInstr(env, LOONGARCH64Instr_Move(dst, src));
+   } else if (ty == Ity_I1) {
+      HReg dst = lookupIRTemp(env, tmp);
+      HReg src = iselCondCode_R(env, stmt->Ist.WrTmp.data);
+      addInstr(env, LOONGARCH64Instr_Move(dst, src));
+   } else if (ty == Ity_F32) {
+      HReg dst = lookupIRTemp(env, tmp);
+      HReg src = iselFltExpr(env, stmt->Ist.WrTmp.data);
+      addInstr(env, LOONGARCH64Instr_FpMove(LAfpmove_FMOV_S, src, dst));
+   } else if (ty == Ity_F64) {
+      HReg dst = lookupIRTemp(env, tmp);
+      HReg src = iselFltExpr(env, stmt->Ist.WrTmp.data);
+      addInstr(env, LOONGARCH64Instr_FpMove(LAfpmove_FMOV_D, src, dst));
+   } else {
+      vpanic("iselStmt(loongarch64): Ist_WrTmp");
+   }
+}
+
 static void iselStmtExit ( ISelEnv* env, IRStmt* stmt )
 {
    if (stmt->Ist.Exit.dst->tag != Ico_U64)
@@ -656,6 +682,12 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
       /* write guest state, fixed offset */
       case Ist_Put:
          iselStmtPut(env, stmt);
+         break;
+
+      /* --------- TMP --------- */
+      /* assign value to temporary */
+      case Ist_WrTmp:
+         iselStmtTmp(env, stmt);
          break;
 
       /* --------- INSTR MARK --------- */
