@@ -818,8 +818,29 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       }
 
       /* --------- GET --------- */
-      case Iex_Get:
-         break;
+      case Iex_Get: {
+         LOONGARCH64AMode* am = mkLOONGARCH64AMode_RI(hregGSP(), e->Iex.Get.offset);
+         HReg             dst = newVRegI(env);
+         LOONGARCH64LoadOp op;
+         switch(ty) {
+            case Ity_I8:
+               op = LAload_LD_BU;
+               break;
+            case Ity_I16:
+               op = LAload_LD_HU;
+               break;
+            case Ity_I32:
+               op = LAload_LD_WU;
+               break;
+            case Ity_I64:
+               op = LAload_LD_D;
+               break;
+            default:
+               goto irreducible;
+         }
+         addInstr(env, LOONGARCH64Instr_Load(op, am, dst));
+         return dst;
+      }
 
       /* --------- CCALL --------- */
       case Iex_CCall:
