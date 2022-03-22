@@ -1791,8 +1791,29 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
 
       /* --------- LITERAL --------- */
-      case Iex_Const:
-         break;
+      case Iex_Const: {
+         /* Just handle the one case. */
+         IRConst* con = e->Iex.Const.con;
+         if (con->tag == Ico_F32i && con->Ico.F32i == 1) {
+            HReg          tmp = newVRegI(env);
+            HReg          dst = newVRegF(env);
+            LOONGARCH64RI* ri = LOONGARCH64RI_I(1, 12, True);
+            addInstr(env, LOONGARCH64Instr_Binary(LAbin_ADDI_W, ri, hregZERO(), tmp));
+            addInstr(env, LOONGARCH64Instr_FpMove(LAfpmove_MOVGR2FR_W, tmp, dst));
+            addInstr(env, LOONGARCH64Instr_FpUnary(LAfpun_FFINT_S_W, dst, dst));
+            return dst;
+         } else if (con->tag == Ico_F64i && con->Ico.F64i == 1) {
+            HReg          tmp = newVRegI(env);
+            HReg          dst = newVRegF(env);
+            LOONGARCH64RI* ri = LOONGARCH64RI_I(1, 12, True);
+            addInstr(env, LOONGARCH64Instr_Binary(LAbin_ADDI_D, ri, hregZERO(), tmp));
+            addInstr(env, LOONGARCH64Instr_FpMove(LAfpmove_MOVGR2FR_D, tmp, dst));
+            addInstr(env, LOONGARCH64Instr_FpUnary(LAfpun_FFINT_D_L, dst, dst));
+            return dst;
+         } else {
+            goto irreducible;
+         }
+      }
 
       default:
          break;
