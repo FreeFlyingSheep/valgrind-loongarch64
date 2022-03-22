@@ -774,8 +774,32 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return lookupIRTemp(env, e->Iex.RdTmp.tmp);
 
       /* --------- LOAD --------- */
-      case Iex_Load:
-         break;
+      case Iex_Load: {
+         if (e->Iex.Load.end != Iend_LE)
+            goto irreducible;
+
+         LOONGARCH64AMode* am = iselIntExpr_AMode(env, e->Iex.Load.addr, ty);
+         HReg             dst = newVRegI(env);
+         LOONGARCH64LoadOp op;
+         switch(ty) {
+            case Ity_I8:
+               op = (am->tag == LAam_RI) ? LAload_LD_BU : LAload_LDX_BU;
+               break;
+            case Ity_I16:
+               op = (am->tag == LAam_RI) ? LAload_LD_HU : LAload_LDX_HU;
+               break;
+            case Ity_I32:
+               op = (am->tag == LAam_RI) ? LAload_LD_WU : LAload_LDX_WU;
+               break;
+            case Ity_I64:
+               op = (am->tag == LAam_RI) ? LAload_LD_D : LAload_LDX_D;
+               break;
+            default:
+               goto irreducible;
+         }
+         addInstr(env, LOONGARCH64Instr_Load(op, am, dst));
+         return dst;
+      }
 
       /* --------- BINARY OP --------- */
       case Iex_Binop: {
