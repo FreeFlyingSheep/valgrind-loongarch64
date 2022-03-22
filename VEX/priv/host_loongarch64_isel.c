@@ -556,6 +556,21 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
    }
 
    switch (stmt->tag) {
+      /* --------- INSTR MARK --------- */
+      /* Doesn't generate any executable code ... */
+      case Ist_IMark:
+         break;
+
+      /* --------- ABI HINT --------- */
+      /* These have no meaning (denotation in the IR) and so we ignore
+         them ... if any actually made it this far. */
+      case Ist_AbiHint:
+         break;
+
+      /* --------- NO-OP --------- */
+      case Ist_NoOp:
+         break;
+
       /* --------- EXIT --------- */
       case Ist_Exit:
          iselStmtExit(env, stmt);
