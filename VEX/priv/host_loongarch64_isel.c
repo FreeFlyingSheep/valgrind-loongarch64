@@ -540,6 +540,49 @@ static void iselStmtStore ( ISelEnv* env, IRStmt* stmt )
    }
 }
 
+static void iselStmtPut ( ISelEnv* env, IRStmt* stmt )
+{
+   IRType ty = typeOfIRExpr(env->type_env, stmt->Ist.Put.data);
+
+   Bool                 fp = False;
+   LOONGARCH64AMode*    am = mkLOONGARCH64AMode_RI(hregGSP(), stmt->Ist.Put.offset);
+   LOONGARCH64StoreOp   op;
+   LOONGARCH64FpStoreOp fop;
+   switch (ty) {
+      case Ity_I8:
+         op = LAstore_ST_B;
+         break;
+      case Ity_I16:
+         op = LAstore_ST_H;
+         break;
+      case Ity_I32:
+         op = LAstore_ST_W;
+         break;
+      case Ity_I64:
+         op = LAstore_ST_D;
+         break;
+      case Ity_F32:
+         fop = LAfpstore_FST_S;
+         fp = True;
+         break;
+      case Ity_F64:
+         fop = LAfpstore_FST_D;
+         fp = True;
+         break;
+      default:
+         vpanic("iselStmt(loongarch64): Ist_Put");
+         break;
+   }
+
+   if (fp) {
+      HReg src = iselFltExpr(env, stmt->Ist.Put.data);
+      addInstr(env, LOONGARCH64Instr_FpStore(fop, am, src));
+   } else {
+      HReg src = iselIntExpr_R(env, stmt->Ist.Put.data);
+      addInstr(env, LOONGARCH64Instr_Store(op, am, src));
+   }
+}
+
 static void iselStmtExit ( ISelEnv* env, IRStmt* stmt )
 {
    if (stmt->Ist.Exit.dst->tag != Ico_U64)
@@ -607,6 +650,12 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
       /* little-endian write to memory */
       case Ist_Store:
          iselStmtStore(env, stmt);
+         break;
+
+      /* --------- PUT --------- */
+      /* write guest state, fixed offset */
+      case Ist_Put:
+         iselStmtPut(env, stmt);
          break;
 
       /* --------- INSTR MARK --------- */
