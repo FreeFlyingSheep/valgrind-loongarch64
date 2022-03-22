@@ -843,8 +843,32 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       }
 
       /* --------- CCALL --------- */
-      case Iex_CCall:
-         break;
+      case Iex_CCall: {
+         HReg    dst = newVRegI(env);
+         vassert(ty == e->Iex.CCall.retty);
+
+         /* be very restrictive for now.  Only 64-bit ints allowed for
+            args, and 64 bits for return type.  Don't forget to change
+            the RetLoc if more types are allowed in future. */
+         if (e->Iex.CCall.retty != Ity_I64)
+            goto irreducible;
+
+         /* Marshal args, do the call, clear stack. */
+         UInt   addToSp = 0;
+         RetLoc rloc    = mk_RetLoc_INVALID();
+         Bool   ok      = doHelperCall(&addToSp, &rloc, env, NULL,
+                                       e->Iex.CCall.cee, e->Iex.CCall.retty,
+                                       e->Iex.CCall.args);
+
+         if (ok) {
+            vassert(is_sane_RetLoc(rloc));
+            vassert(rloc.pri == RLPri_Int);
+            vassert(addToSp == 0);
+            addInstr(env, LOONGARCH64Instr_Move(dst, hregLOONGARCH64_R4()));
+            return dst;
+         }
+         goto irreducible;
+      }
 
       /* --------- LITERAL --------- */
       /* 64-bit literals */
