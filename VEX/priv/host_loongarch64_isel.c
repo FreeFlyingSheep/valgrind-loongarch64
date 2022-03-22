@@ -1718,8 +1718,26 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
          return lookupIRTemp(env, e->Iex.RdTmp.tmp);
 
       /* --------- LOAD --------- */
-      case Iex_Load:
-         break;
+      case Iex_Load: {
+         if (e->Iex.Load.end != Iend_LE)
+            goto irreducible;
+
+         LOONGARCH64AMode* am = iselIntExpr_AMode(env, e->Iex.Load.addr, ty);
+         HReg             dst = newVRegF(env);
+         LOONGARCH64FpLoadOp op;
+         switch(ty) {
+            case Ity_F32:
+               op = (am->tag == LAam_RI) ? LAfpload_FLD_S : LAfpload_FLDX_S;
+               break;
+            case Ity_F64:
+               op = (am->tag == LAam_RI) ? LAfpload_FLD_D : LAfpload_FLDX_D;
+               break;
+            default:
+               goto irreducible;
+         }
+         addInstr(env, LOONGARCH64Instr_FpLoad(op, am, dst));
+         return dst;
+      }
 
       /* --------- GET --------- */
       case Iex_Get:
