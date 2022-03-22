@@ -1708,8 +1708,67 @@ static HReg iselFltExpr ( ISelEnv* env, IRExpr* e )
 /* DO NOT CALL THIS DIRECTLY */
 static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
 {
-   HReg r;
-   return r;
+   IRType ty = typeOfIRExpr(env->type_env, e);
+   vassert(e);
+   vassert(ty == Ity_F32 || ty == Ity_F64);
+
+   switch (e->tag) {
+      /* --------- TEMP --------- */
+      case Iex_RdTmp:
+         return lookupIRTemp(env, e->Iex.RdTmp.tmp);
+
+      /* --------- LOAD --------- */
+      case Iex_Load:
+         break;
+
+      /* --------- GET --------- */
+      case Iex_Get:
+         break;
+
+      /* --------- QUATERNARY OP --------- */
+      case Iex_Qop: {
+         switch (e->Iex.Qop.details->op) {
+            default:
+               goto irreducible;
+         }
+      }
+
+      /* --------- TERNARY OP --------- */
+      case Iex_Triop: {
+         switch (e->Iex.Triop.details->op) {
+            default:
+               goto irreducible;
+         }
+      }
+
+      /* --------- BINARY OP --------- */
+      case Iex_Binop: {
+         switch (e->Iex.Binop.op) {
+            default:
+               goto irreducible;
+         }
+      }
+
+      /* --------- UNARY OP --------- */
+      case Iex_Unop: {
+         switch (e->Iex.Unop.op) {
+            default:
+               goto irreducible;
+         }
+      }
+
+      /* --------- LITERAL --------- */
+      case Iex_Const:
+         break;
+
+      default:
+         break;
+   }
+
+   /* We get here if no pattern matched. */
+irreducible:
+   ppIRExpr(e);
+   vpanic("iselFltExpr(loongarch64): cannot reduce tree");
 }
 
 
