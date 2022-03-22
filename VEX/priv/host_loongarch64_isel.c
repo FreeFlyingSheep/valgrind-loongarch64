@@ -964,6 +964,58 @@ static void iselStmtDirty ( ISelEnv* env, IRStmt* stmt )
    }
 }
 
+static void iselStmtLLSC ( ISelEnv* env, IRStmt* stmt )
+{
+   IRTemp res = stmt->Ist.LLSC.result;
+   IRType tya = typeOfIRExpr(env->type_env, stmt->Ist.LLSC.addr);
+
+   /* Temporary solution; this need to be rewritten again for LOONGARCH64.
+      On LOONGARCH64 you can not read from address that is locked with LL
+      before SC. If you read from address that is locked than SC will fall.
+    */
+   if (stmt->Ist.LLSC.storedata == NULL) {
+      /* LL */
+      IRType ty = typeOfIRTemp(env->type_env, res);
+      LOONGARCH64LLSCOp op;
+      switch (ty) {
+         case Ity_I32:
+            op = LAllsc_LL_W;
+            break;
+         case Ity_I64:
+            op = LAllsc_LL_D;
+            break;
+         default:
+            vpanic("iselStmt(loongarch64): Ist_LLSC");
+            break;
+      }
+      LOONGARCH64AMode* addr = iselIntExpr_AMode(env, stmt->Ist.LLSC.addr, tya);
+      HReg               val = lookupIRTemp(env, res);
+      addInstr(env, LOONGARCH64Instr_LLSC(op, True, addr, val));
+   } else {
+      /* SC */
+      IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.LLSC.storedata);
+      LOONGARCH64LLSCOp op;
+      switch (tyd) {
+         case Ity_I32:
+            op = LAllsc_SC_W;
+            break;
+         case Ity_I64:
+            op = LAllsc_SC_D;
+            break;
+         default:
+            vpanic("iselStmt(loongarch64): Ist_LLSC");
+            break;
+      }
+      LOONGARCH64AMode* addr = iselIntExpr_AMode(env, stmt->Ist.LLSC.addr, tya);
+      HReg               val = iselIntExpr_R(env, stmt->Ist.LLSC.storedata);
+      HReg               dst = lookupIRTemp(env, res);
+      HReg               tmp = newVRegI(env);
+      addInstr(env, LOONGARCH64Instr_Move(tmp, val));
+      addInstr(env, LOONGARCH64Instr_LLSC(op, False, addr, tmp));
+      addInstr(env, LOONGARCH64Instr_Move(dst, tmp));
+   }
+}
+
 static void iselStmtExit ( ISelEnv* env, IRStmt* stmt )
 {
    if (stmt->Ist.Exit.dst->tag != Ico_U64)
@@ -1049,6 +1101,11 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
       /* call complex ("dirty") helper function */
       case Ist_Dirty:
          iselStmtDirty(env, stmt);
+         break;
+
+      /* --------- Load Linked and Store Conditional --------- */
+      case Ist_LLSC:
+         iselStmtLLSC(env, stmt);
          break;
 
       /* --------- INSTR MARK --------- */
