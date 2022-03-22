@@ -1465,6 +1465,27 @@ static void iselInt128Expr (HReg* hi, HReg* lo, ISelEnv* env, IRExpr* e)
 /* DO NOT CALL THIS DIRECTLY ! */
 static void iselInt128Expr_wrk (HReg* hi, HReg* lo, ISelEnv* env, IRExpr* e)
 {
+   vassert(e);
+   vassert(typeOfIRExpr(env->type_env, e) == Ity_I128);
+
+   /* --------- TEMP --------- */
+   if (e->tag == Iex_RdTmp) {
+      lookupIRTempPair(hi, lo, env, e->Iex.RdTmp.tmp);
+      return;
+   }
+
+   /* --------- BINARY OP --------- */
+   if (e->tag == Iex_Binop) {
+      switch (e->Iex.Binop.op) {
+         default:
+            goto irreducible;
+      }
+   }
+
+   /* We get here if no pattern matched. */
+irreducible:
+   ppIRExpr(e);
+   vpanic("iselInt128Expr(loongarch64): cannot reduce tree");
 }
 
 
