@@ -493,6 +493,60 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
 /*--- ISEL: Statements                                  ---*/
 /*---------------------------------------------------------*/
 
+static void iselStmtExit ( ISelEnv* env, IRStmt* stmt )
+{
+   if (stmt->Ist.Exit.dst->tag != Ico_U64)
+      vpanic("iselStmt(loongarch64): Ist_Exit: dst is not a 64-bit value");
+
+   HReg            cond = iselCondCode_R(env, stmt->Ist.Exit.guard);
+   LOONGARCH64AMode* am = mkLOONGARCH64AMode_RI(hregGSP(), stmt->Ist.Exit.offsIP);
+
+   /* Case: boring transfer to known address */
+   if (stmt->Ist.Exit.jk == Ijk_Boring) {
+      if (env->chainingAllowed) {
+         /* .. almost always true .. */
+         /* Skip the event check at the dst if this is a forwards edge. */
+         Bool toFastEP = ((Addr64)stmt->Ist.Exit.dst->Ico.U64) > env->max_ga;
+         addInstr(env, LOONGARCH64Instr_XDirect(stmt->Ist.Exit.dst->Ico.U64,
+                                                am, cond, toFastEP));
+      } else {
+         /* .. very occasionally .. */
+         /* We can't use chaining, so ask for an assisted transfer,
+            as that's the only alternative that is allowable. */
+         HReg dst = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
+         addInstr(env, LOONGARCH64Instr_XAssisted(dst, am, cond, Ijk_Boring));
+      }
+      return;
+   }
+
+   /* Case: assisted transfer to arbitrary address */
+   switch (stmt->Ist.Exit.jk) {
+      /* Keep this list in sync with that for iselNext below */
+      case Ijk_ClientReq:
+      case Ijk_Yield:
+      case Ijk_NoDecode:
+      case Ijk_InvalICache:
+      case Ijk_NoRedir:
+      case Ijk_SigILL:
+      case Ijk_SigTRAP:
+      case Ijk_SigSEGV:
+      case Ijk_SigBUS:
+      case Ijk_SigFPE_IntDiv:
+      case Ijk_SigFPE_IntOvf:
+      case Ijk_SigSYS:
+      case Ijk_Sys_syscall: {
+         HReg dst = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
+         addInstr(env, LOONGARCH64Instr_XAssisted(dst, am, cond, stmt->Ist.Exit.jk));
+         break;
+      }
+      default:
+         /* Do we ever expect to see any other kind? */
+         ppIRJumpKind(stmt->Ist.Exit.jk);
+         vpanic("iselStmt(loongarch64): Ist_Exit: unexpected jump kind");
+         break;
+   }
+}
+
 static void iselStmt(ISelEnv* env, IRStmt* stmt)
 {
    if (vex_traceflags & VEX_TRACE_VCODE) {
@@ -502,6 +556,11 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
    }
 
    switch (stmt->tag) {
+      /* --------- EXIT --------- */
+      case Ist_Exit:
+         iselStmtExit(env, stmt);
+         break;
+
       default:
          ppIRStmt(stmt);
          vpanic("iselStmt(loongarch64)");
