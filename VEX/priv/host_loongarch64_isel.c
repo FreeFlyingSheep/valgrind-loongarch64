@@ -649,7 +649,29 @@ static LOONGARCH64AMode* iselIntExpr_AMode ( ISelEnv* env,
 static LOONGARCH64AMode* iselIntExpr_AMode_wrk ( ISelEnv* env,
                                                  IRExpr* e, IRType dty )
 {
-   return NULL;
+   IRType ty = typeOfIRExpr(env->type_env, e);
+   vassert(e);
+   vassert(ty == Ity_I64);
+
+   /* Add64(expr, i), where i <= 0x7ff */
+   if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_Add64
+       && e->Iex.Binop.arg2->tag == Iex_Const
+       && e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U64
+       && e->Iex.Binop.arg2->Iex.Const.con->Ico.U64 <= 0x7ff) {
+      return LOONGARCH64AMode_RI(iselIntExpr_R(env, e->Iex.Binop.arg1),
+                                 (UShort)e->Iex.Binop.arg2->Iex.Const.con->Ico.U64);
+   }
+
+   /* Add64(expr, expr) */
+   if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_Add64) {
+      HReg base = iselIntExpr_R(env, e->Iex.Binop.arg1);
+      HReg index = iselIntExpr_R(env, e->Iex.Binop.arg2);
+      return LOONGARCH64AMode_RR(base, index);
+   }
+
+   /* Doesn't match anything in particular.  Generate it into
+      a register and use that. */
+   return LOONGARCH64AMode_RI(iselIntExpr_R(env, e), 0);
 }
 
 /* --------------------- RI --------------------- */
