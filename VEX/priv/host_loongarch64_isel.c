@@ -1016,6 +1016,34 @@ static void iselStmtLLSC ( ISelEnv* env, IRStmt* stmt )
    }
 }
 
+static void iselStmtCas ( ISelEnv* env, IRStmt* stmt )
+{
+   IRCAS* cas = stmt->Ist.CAS.details;
+   if (cas->oldHi == IRTemp_INVALID && cas->end == Iend_LE) {
+      /* "normal" singleton CAS */
+      HReg   old = lookupIRTemp(env, cas->oldLo);
+      HReg  addr = iselIntExpr_R(env, cas->addr);
+      HReg  expd = iselIntExpr_R(env, cas->expdLo);
+      HReg  data = iselIntExpr_R(env, cas->dataLo);
+      IRType  ty = typeOfIRTemp(env->type_env, cas->oldLo);
+      Bool size64;
+      switch (ty) {
+         case Ity_I32:
+            size64 = False;
+            break;
+         case Ity_I64:
+            size64 = True;
+            break;
+         default:
+            vpanic("iselStmt(loongarch64): Ist_CAS");
+            break;
+      }
+      addInstr(env, LOONGARCH64Instr_Cas(old, addr, expd, data, size64));
+   } else {
+      vpanic("iselStmt(loongarch64): Ist_CAS");
+   }
+}
+
 static void iselStmtExit ( ISelEnv* env, IRStmt* stmt )
 {
    if (stmt->Ist.Exit.dst->tag != Ico_U64)
@@ -1106,6 +1134,11 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
       /* --------- Load Linked and Store Conditional --------- */
       case Ist_LLSC:
          iselStmtLLSC(env, stmt);
+         break;
+
+      /* --------- CAS --------- */
+      case Ist_CAS:
+         iselStmtCas(env, stmt);
          break;
 
       /* --------- INSTR MARK --------- */
