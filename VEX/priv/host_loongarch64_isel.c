@@ -1044,6 +1044,22 @@ static void iselStmtCas ( ISelEnv* env, IRStmt* stmt )
    }
 }
 
+static void iselStmtMBE ( ISelEnv* env, IRStmt* stmt )
+{
+   switch (stmt->Ist.MBE.event) {
+      case Imbe_Fence:
+      case Imbe_CancelReservation:
+         addInstr(env, LOONGARCH64Instr_Bar(LAbar_DBAR, 0));
+         break;
+      case Imbe_InsnFence:
+         addInstr(env, LOONGARCH64Instr_Bar(LAbar_IBAR, 0));
+         break;
+      default:
+         vpanic("iselStmt(loongarch64): Ist_MBE");
+         break;
+   }
+}
+
 static void iselStmtExit ( ISelEnv* env, IRStmt* stmt )
 {
    if (stmt->Ist.Exit.dst->tag != Ico_U64)
@@ -1139,6 +1155,11 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
       /* --------- CAS --------- */
       case Ist_CAS:
          iselStmtCas(env, stmt);
+         break;
+
+      /* --------- MEM FENCE --------- */
+      case Ist_MBE:
+         iselStmtMBE(env, stmt);
          break;
 
       /* --------- INSTR MARK --------- */
