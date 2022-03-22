@@ -848,8 +848,29 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
       /* --------- LITERAL --------- */
       /* 64-bit literals */
-      case Iex_Const:
-         break;
+      case Iex_Const: {
+         ULong imm = 0;
+         HReg  dst = newVRegI(env);
+         switch (e->Iex.Const.con->tag) {
+            case Ico_U64:
+               imm = e->Iex.Const.con->Ico.U64;
+               break;
+            case Ico_U32:
+               imm = e->Iex.Const.con->Ico.U32;
+               break;
+            case Ico_U16:
+               imm = e->Iex.Const.con->Ico.U16;
+               break;
+            case Ico_U8:
+               imm = e->Iex.Const.con->Ico.U8;
+               break;
+            default:
+               ppIRExpr(e);
+               vpanic("iselIntExpr_R.Iex_Const(loongarch64)");
+         }
+         addInstr(env, LOONGARCH64Instr_LI(imm, dst));
+         return dst;
+      }
 
       default:
          break;
