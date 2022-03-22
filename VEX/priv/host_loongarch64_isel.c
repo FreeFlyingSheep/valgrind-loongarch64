@@ -1740,8 +1740,23 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
 
       /* --------- GET --------- */
-      case Iex_Get:
-         break;
+      case Iex_Get: {
+         LOONGARCH64AMode* am = mkLOONGARCH64AMode_RI(hregGSP(), e->Iex.Get.offset);
+         HReg             dst = newVRegF(env);
+         LOONGARCH64FpLoadOp op;
+         switch(ty) {
+            case Ity_F32:
+               op = LAfpload_FLD_S;
+               break;
+            case Ity_F64:
+               op = LAfpload_FLD_D;
+               break;
+            default:
+               goto irreducible;
+         }
+         addInstr(env, LOONGARCH64Instr_FpLoad(op, am, dst));
+         return dst;
+      }
 
       /* --------- QUATERNARY OP --------- */
       case Iex_Qop: {
