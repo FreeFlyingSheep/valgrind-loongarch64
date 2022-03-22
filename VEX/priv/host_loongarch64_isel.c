@@ -712,7 +712,40 @@ static LOONGARCH64RI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e,
 static LOONGARCH64RI* iselIntExpr_RI_wrk ( ISelEnv* env, IRExpr* e,
                                            UChar size, Bool isSigned )
 {
-   return NULL;
+   IRType ty = typeOfIRExpr(env->type_env, e);
+   vassert(e);
+   vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32 || ty == Ity_I64);
+
+   LOONGARCH64RI *ri = NULL;
+
+   /* special case: immediate */
+   if (e->tag == Iex_Const) {
+      switch (e->Iex.Const.con->tag) {
+         case Ico_U32:
+            if (!isSigned && e->Iex.Const.con->Ico.U32 < (1 << size)) {
+               UShort imm = e->Iex.Const.con->Ico.U32;
+               ri = LOONGARCH64RI_I(imm, size, isSigned);
+            }
+            break;
+         case Ico_U64:
+            if (!isSigned && e->Iex.Const.con->Ico.U64 < (1 << size)) {
+               UShort imm = e->Iex.Const.con->Ico.U64;
+               ri = LOONGARCH64RI_I(imm, size, isSigned);
+            }
+            break;
+         default:
+            break;
+      }
+      /* else fail, fall through to default case */
+   }
+
+   if (ri == NULL) {
+      /* default case: calculate into a register and return that */
+      HReg reg = iselIntExpr_R(env, e);
+      ri = LOONGARCH64RI_R(reg);
+   }
+
+   return ri;
 }
 
 /* --------------------- Reg --------------------- */
