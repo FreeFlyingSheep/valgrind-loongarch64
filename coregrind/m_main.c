@@ -2521,7 +2521,10 @@ static void final_tidyup(ThreadId tid)
             offsetof(VexGuestS390XState, guest_r2),
             sizeof(VG_(threads)[tid].arch.vex.guest_r2));
 #  elif defined(VGA_loongarch64)
-   /* TODO */
+   VG_(threads)[tid].arch.vex.guest_R4 = to_run;
+   VG_TRACK(post_reg_write, Vg_CoreClientReq, tid,
+            offsetof(VexGuestLOONGARCH64State, guest_R4),
+            sizeof(VG_(threads)[tid].arch.vex.guest_R4));
 #else
    I_die_here : architecture missing in m_main.c
 #endif
