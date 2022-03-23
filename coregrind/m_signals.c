@@ -629,18 +629,20 @@ VgHashTable *ht_sigchld_ignore = NULL;
       }
 
 #elif defined(VGP_loongarch64_linux)
-#  define VG_UCONTEXT_INSTR_PTR(uc)      0 /* TODO */
-#  define VG_UCONTEXT_STACK_PTR(uc)      0 /* TODO */
-#  define VG_UCONTEXT_FRAME_PTR(uc)      0 /* TODO */
-#  define VG_UCONTEXT_SYSCALL_NUM(uc)    0 /* TODO */
+#  define VG_UCONTEXT_INSTR_PTR(uc)      (((uc)->uc_mcontext.sc_pc))
+#  define VG_UCONTEXT_STACK_PTR(uc)      ((uc)->uc_mcontext.sc_regs[3])
+#  define VG_UCONTEXT_FRAME_PTR(uc)      ((uc)->uc_mcontext.sc_regs[22])
+#  define VG_UCONTEXT_SYSCALL_NUM(uc)    ((uc)->uc_mcontext.sc_regs[11])
 #  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                              \
-      /* TODO */                                                      \
-      VG_(mk_SysRes_loongarch64_linux)(0)
+      /* Convert the value in uc_mcontext.regs[4] into a SysRes. */   \
+      VG_(mk_SysRes_loongarch64_linux)((uc)->uc_mcontext.sc_regs[4])
 
 #  define VG_UCONTEXT_TO_UnwindStartRegs(srP, uc)                     \
-      do {                                                            \
-         /* TODO */                                                   \
-      } while (0)
+      { (srP)->r_pc = (uc)->uc_mcontext.sc_pc;                        \
+        (srP)->r_sp = (uc)->uc_mcontext.sc_regs[3];                   \
+        (srP)->misc.LOONGARCH64.r_fp = (uc)->uc_mcontext.sc_regs[22]; \
+        (srP)->misc.LOONGARCH64.r_ra = (uc)->uc_mcontext.sc_regs[1];  \
+      }
 
 #elif defined(VGP_x86_solaris)
 #  define VG_UCONTEXT_INSTR_PTR(uc)       ((Addr)(uc)->uc_mcontext.gregs[VKI_EIP])
