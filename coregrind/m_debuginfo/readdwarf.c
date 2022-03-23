@@ -2316,6 +2316,10 @@ static void initUnwindContext ( /*OUT*/UnwindContext* ctx )
          start out as RR_Same. */
       ctx->state[j].reg[29/*FP*/].tag = RR_Same;
       ctx->state[j].reg[30/*LR*/].tag = RR_Same;
+#     elif defined(VGA_loongarch64)
+      /* Registers fp and ra start out implicitly as RR_Same. */
+      ctx->state[j].reg[FP_REG].tag = RR_Same;
+      ctx->state[j].reg[RA_REG_DEFAULT].tag = RR_Same;
 #     endif
    }
 }
@@ -2398,7 +2402,8 @@ static Bool summarise_context(/*OUT*/Addr* base,
    if (ctxs->cfa_is_regoff && ctxs->cfa_reg == SP_REG) {
       si_m->cfa_off = ctxs->cfa_off;
 #     if defined(VGA_x86) || defined(VGA_amd64) || defined(VGA_s390x) \
-         || defined(VGA_mips32) || defined(VGA_nanomips) || defined(VGA_mips64)
+         || defined(VGA_mips32) || defined(VGA_nanomips) || defined(VGA_mips64) \
+         || defined(VGA_loongarch64)
       si_m->cfa_how = CFIC_IA_SPREL;
 #     elif defined(VGA_arm)
       si_m->cfa_how = CFIC_ARM_R13REL;
@@ -2412,7 +2417,8 @@ static Bool summarise_context(/*OUT*/Addr* base,
    if (ctxs->cfa_is_regoff && ctxs->cfa_reg == FP_REG) {
       si_m->cfa_off = ctxs->cfa_off;
 #     if defined(VGA_x86) || defined(VGA_amd64) || defined(VGA_s390x) \
-         || defined(VGA_mips32) || defined(VGA_nanomips) || defined(VGA_mips64)
+         || defined(VGA_mips32) || defined(VGA_nanomips) || defined(VGA_mips64) \
+         || defined(VGA_loongarch64)
       si_m->cfa_how = CFIC_IA_BPREL;
 #     elif defined(VGA_arm)
       si_m->cfa_how = CFIC_ARM_R12REL;
