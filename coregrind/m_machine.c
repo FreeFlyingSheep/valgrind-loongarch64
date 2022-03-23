@@ -153,7 +153,12 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
    regs->misc.MIPS64.r28
       = VG_(threads)[tid].arch.vex.guest_r28;
 #  elif defined(VGA_loongarch64)
-   /* TODO */
+   regs->r_pc = VG_(threads)[tid].arch.vex.guest_PC;
+   regs->r_sp = VG_(threads)[tid].arch.vex.guest_R3;
+   regs->misc.LOONGARCH64.r_fp
+      = VG_(threads)[tid].arch.vex.guest_R22;
+   regs->misc.LOONGARCH64.r_ra
+      = VG_(threads)[tid].arch.vex.guest_R1;
 #  else
 #    error "Unknown arch"
 #  endif
