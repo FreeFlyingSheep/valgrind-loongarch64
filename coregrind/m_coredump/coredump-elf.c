@@ -490,7 +490,39 @@ static void fill_prstatus(const ThreadState *tst,
    regs[VKI_MIPS32_EF_CP0_EPC]    = arch->vex.guest_PC;
 #  undef DO
 #elif defined(VGP_loongarch64_linux)
-   /* TODO */
+   regs->regs[0]  = arch->vex.guest_R0;
+   regs->regs[1]  = arch->vex.guest_R1;
+   regs->regs[2]  = arch->vex.guest_R2;
+   regs->regs[3]  = arch->vex.guest_R3;
+   regs->regs[4]  = arch->vex.guest_R4;
+   regs->regs[5]  = arch->vex.guest_R5;
+   regs->regs[6]  = arch->vex.guest_R6;
+   regs->regs[7]  = arch->vex.guest_R7;
+   regs->regs[8]  = arch->vex.guest_R8;
+   regs->regs[9]  = arch->vex.guest_R9;
+   regs->regs[10] = arch->vex.guest_R10;
+   regs->regs[11] = arch->vex.guest_R11;
+   regs->regs[12] = arch->vex.guest_R12;
+   regs->regs[13] = arch->vex.guest_R13;
+   regs->regs[14] = arch->vex.guest_R14;
+   regs->regs[15] = arch->vex.guest_R15;
+   regs->regs[16] = arch->vex.guest_R16;
+   regs->regs[17] = arch->vex.guest_R17;
+   regs->regs[18] = arch->vex.guest_R18;
+   regs->regs[19] = arch->vex.guest_R19;
+   regs->regs[20] = arch->vex.guest_R20;
+   regs->regs[21] = arch->vex.guest_R21;
+   regs->regs[22] = arch->vex.guest_R22;
+   regs->regs[23] = arch->vex.guest_R23;
+   regs->regs[24] = arch->vex.guest_R24;
+   regs->regs[25] = arch->vex.guest_R25;
+   regs->regs[26] = arch->vex.guest_R26;
+   regs->regs[27] = arch->vex.guest_R27;
+   regs->regs[28] = arch->vex.guest_R28;
+   regs->regs[29] = arch->vex.guest_R29;
+   regs->regs[30] = arch->vex.guest_R30;
+   regs->regs[31] = arch->vex.guest_R31;
+   regs->csr_era  = arch->vex.guest_PC;
 #elif defined(VGP_amd64_freebsd)
    regs->rflags = LibVEX_GuestAMD64_get_rflags( &arch->vex );
    regs->rsp    = arch->vex.guest_RSP;
@@ -657,7 +689,12 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
 #elif defined(VGP_nanomips_linux)
 
 #elif defined(VGP_loongarch64_linux)
-   /* TODO */
+#  define DO(n)  (*fpu)[n] = *(const double*)(&arch->vex.guest_F##n)
+   DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
+   DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
+   DO(16); DO(17); DO(18); DO(19); DO(20); DO(21); DO(22); DO(23);
+   DO(24); DO(25); DO(26); DO(27); DO(28); DO(29); DO(30); DO(31);
+#  undef DO
 
 #elif defined(VGP_x86_freebsd)
 
