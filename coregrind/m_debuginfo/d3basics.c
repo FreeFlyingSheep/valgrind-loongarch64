@@ -556,7 +556,8 @@ static Bool get_Dwarf_Reg( /*OUT*/Addr* a, Word regno, const RegSummary* regs )
    if (regno == 31) { *a = regs->sp; return True; }
    if (regno == 29) { *a = regs->fp; return True; }
 #  elif defined(VGP_loongarch64_linux)
-   /* TODO */
+   if (regno ==  3) { *a = regs->sp; return True; }
+   if (regno == 22) { *a = regs->fp; return True; }
 #  else
 #    error "Unknown platform"
 #  endif
