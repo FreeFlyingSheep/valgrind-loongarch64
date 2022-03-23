@@ -1741,6 +1741,65 @@ VG_(trampoline_stuff_end):
 #	undef UD2_1024
 #	undef UD2_PAGE
 
+/*------------------- loongarch64-linux -------------------*/
+#else
+#if defined(VGP_loongarch64_linux)
+
+.global VG_(trampoline_stuff_start)
+VG_(trampoline_stuff_start):
+
+.global VG_(loongarch64_linux_SUBST_FOR_rt_sigreturn)
+VG_(loongarch64_linux_SUBST_FOR_rt_sigreturn):
+        li.w $a7, __NR_rt_sigreturn
+        syscall 0
+        .long 0 /*illegal insn*/
+
+.global VG_(loongarch64_linux_REDIR_FOR_strlen)
+.type   VG_(loongarch64_linux_REDIR_FOR_strlen), @function
+VG_(loongarch64_linux_REDIR_FOR_strlen):
+      move   $t0, $a0
+   strlen_loop:
+      ld.bu  $t1, $a0, 0
+      addi.d $a0, $a0, 1
+      bne    $t1, $zero, strlen_loop
+      sub.d  $a0, $a0, $t0
+      addi.d $a0, $a0, -1
+      jr     $ra
+.size VG_(loongarch64_linux_REDIR_FOR_strlen), .-VG_(loongarch64_linux_REDIR_FOR_strlen)
+
+.global VG_(loongarch64_linux_REDIR_FOR_strchr)
+.type   VG_(loongarch64_linux_REDIR_FOR_strchr), @function
+VG_(loongarch64_linux_REDIR_FOR_strchr):
+   strchr_loop:
+      ld.bu  $t0, $a0, 0
+      beq    $t0, $a1, strchr_end
+      addi.d $a0, $a0, 1
+      bne    $t0, $zero, strchr_loop
+      move   $a0, $zero
+   strchr_end:
+      jr     $ra
+.size VG_(loongarch64_linux_REDIR_FOR_strchr), .-VG_(loongarch64_linux_REDIR_FOR_strchr)
+
+.global VG_(loongarch64_linux_REDIR_FOR_strcmp)
+.type   VG_(loongarch64_linux_REDIR_FOR_strcmp), @function
+VG_(loongarch64_linux_REDIR_FOR_strcmp):
+   strcmp_begin:
+      ld.bu  $t0, $a0, 0
+      ld.bu  $t1, $a1, 0
+      beqz   $t0, strcmp_end
+      beq    $t0, $t1, strcmp_loop
+   strcmp_end:
+      sub.d  $a0, $t0, $t1
+      jr     $ra
+   strcmp_loop:
+      addi.d $a0, $a0, 1
+      addi.d $a1, $a1, 1
+      b      strcmp_begin
+.size VG_(loongarch64_linux_REDIR_FOR_strcmp), .-VG_(loongarch64_linux_REDIR_FOR_strcmp)
+
+.global VG_(trampoline_stuff_end)
+VG_(trampoline_stuff_end):
+
 /*---------------- x86-solaris ----------------*/
 #else
 #if defined(VGP_x86_solaris)
@@ -1924,6 +1983,7 @@ VG_(trampoline_stuff_end):
 #else
 #  error Unknown platform
 
+#endif
 #endif
 #endif
 #endif

@@ -35,6 +35,7 @@ char* all_archs[] = {
    "mips64",
    "nanomips",
    "riscv64",
+   "loongarch64",
    NULL
 };
 
@@ -83,6 +84,9 @@ static Bool go(char* arch)
 
 #elif defined(VGP_riscv64_linux)
    if ( 0 == strcmp( arch, "riscv64" ) ) return True;
+
+#elif defined(VGP_loongarch64_linux)
+   if ( 0 == strcmp( arch, "loongarch64" ) ) return True;
 
 #else
 #  error Unknown platform

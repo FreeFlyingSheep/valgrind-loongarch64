@@ -215,6 +215,17 @@ SysRes VG_(mk_SysRes_riscv64_linux) ( Long val ) {
    return res;
 }
 
+SysRes VG_(mk_SysRes_loongarch64_linux) ( UWord val ) {
+   SysRes res;
+   res._isError = val >= -4095 && val <= -1;
+   if (res._isError) {
+      res._val = (UWord)(-val);
+   } else {
+      res._val = (UWord)val;
+   }
+   return res;
+}
+
 /* Generic constructors. */
 SysRes VG_(mk_SysRes_Success) ( UWord res ) {
    SysRes r;
@@ -1108,6 +1119,22 @@ asm(
 ".previous\n"
 );
 
+#elif defined(VGP_loongarch64_linux)
+extern UWord do_syscall_WRK (UWord a1, UWord a2, UWord a3, /* $a0, $a1, $a2 */
+                             UWord a4, UWord a5, UWord a6, /* $a3, $a4, $a5 */
+                             UWord syscall_no);            /* $a6 */
+asm (
+   ".text                                  \n\t"
+   ".globl do_syscall_WRK                  \n\t"
+   ".type  do_syscall_WRK, @function       \n\t"
+   "do_syscall_WRK:                        \n\t"
+   "   move    $a7, $a6                    \n\t"           /* a7 = syscall_no */
+   "   syscall 0                           \n\t"
+   "   jr      $ra                         \n\t"
+   ".size do_syscall_WRK, .-do_syscall_WRK \n\t"
+   ".previous                              \n\t"
+);
+
 #elif defined(VGP_x86_solaris)
 
 extern ULong
@@ -1359,6 +1386,11 @@ SysRes VG_(do_syscall) ( UWord sysno, RegWord a1, RegWord a2, RegWord a3,
 #  elif defined(VGP_riscv64_linux)
    UWord val = do_syscall_WRK(a1, a2, a3, a4, a5, a6, sysno);
    return VG_(mk_SysRes_riscv64_linux)(val);
+
+#  elif defined(VGP_loongarch64_linux)
+   UWord val = 0;
+   val = do_syscall_WRK(a1, a2, a3, a4, a5, a6, sysno);
+   return VG_(mk_SysRes_loongarch64_linux)(val);
 
 #  elif defined(VGP_x86_solaris)
    UInt val, val2, err = False;

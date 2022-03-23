@@ -109,12 +109,13 @@ typedef
          replace-style ones. */
       /*  312 */ ULong guest_NRADDR;
 
-      /* Fallback LL/SC support. */
-      /*  320 */ ULong guest_LLSC_SIZE; /* 0==no transaction, else 4 or 8. */
-      /*  328 */ ULong guest_LLSC_ADDR; /* Address of the transaction. */
-      /*  336 */ ULong guest_LLSC_DATA; /* Original value at ADDR. */
+      /* Needed for Darwin (but mandated for all guest architectures) */
+      /*  320 */ ULong guest_IP_AT_SYSCALL;
 
-      /*  344 */ ULong _padding1;
+      /* Fallback LL/SC support. */
+      /*  328 */ ULong guest_LLSC_SIZE; /* 0==no transaction, else 4 or 8. */
+      /*  336 */ ULong guest_LLSC_ADDR; /* Address of the transaction. */
+      /*  344 */ ULong guest_LLSC_DATA; /* Original value at ADDR. */
 
       /* FPU/SIMD Registers */
       /*  352 */ U256 guest_X0;

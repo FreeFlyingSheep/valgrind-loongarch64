@@ -1750,7 +1750,7 @@ Bool VG_(translate) ( ThreadId tid,
            vex_archinfo.arm64_requires_fallback_LLSC;
 #  endif
 
-#  if defined(VGP_riscv64_linux)
+#  if defined(VGP_riscv64_linux) || defined(VGP_loongarch64_linux)
    vex_abiinfo.guest__use_fallback_LLSC = True;
 #  endif
 

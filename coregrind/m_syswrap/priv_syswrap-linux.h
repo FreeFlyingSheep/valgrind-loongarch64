@@ -556,6 +556,13 @@ extern UInt do_syscall_clone_riscv64_linux ( Word (*fn) (void *),
                                              Int*  child_tid,
                                              Int*  parent_tid,
                                              void* tls_ptr);
+extern UInt do_syscall_clone_loongarch64_linux ( Word (*fn) (void *), /* a0 */
+                                                 void* stack,         /* a1 */
+                                                 Int   flags,         /* a2 */
+                                                 void* arg,           /* a3 */
+                                                 Int*  child_tid,     /* a4 */
+                                                 Int*  parent_tid,    /* a5 */
+                                                 void* tls_ptr);      /* a6 */
 #endif   // __PRIV_SYSWRAP_LINUX_H
 
 /*--------------------------------------------------------------------*/

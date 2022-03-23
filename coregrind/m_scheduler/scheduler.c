@@ -1012,6 +1012,8 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
    tst->arch.vex.guest_LLaddr = (RegWord)(-1);
 #  elif defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd)
    tst->arch.vex.guest_LLSC_SIZE = 0;
+#  elif defined(VGP_loongarch64_linux)
+   tst->arch.vex.guest_LLSC_SIZE = 0;
 #  elif defined(VGP_riscv64_linux)
    tst->arch.vex.guest_LLSC_SIZE = 0;
 #  endif
@@ -1865,6 +1867,9 @@ void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode src )
 #elif defined(VGA_riscv64)
 #  define VG_CLREQ_ARGS       guest_x14
 #  define VG_CLREQ_RET        guest_x13
+#elif defined(VGA_loongarch64)
+#  define VG_CLREQ_ARGS       guest_R12
+#  define VG_CLREQ_RET        guest_R11
 #else
 #  error Unknown arch
 #endif

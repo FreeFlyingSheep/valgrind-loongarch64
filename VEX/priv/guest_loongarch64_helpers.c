@@ -155,6 +155,8 @@ void LibVEX_GuestLOONGARCH64_initialise ( /*OUT*/
       Note, this is only set for wrap-style redirects, not for
       replace-style ones. */
    vex_state->guest_NRADDR = 0;
+
+   vex_state->guest_IP_AT_SYSCALL = 0;
 }
 
 
@@ -223,7 +225,7 @@ VexGuestLayout loongarch64Guest_layout = {
    .sizeof_IP = 8,
    /* Describe any sections to be regarded by Memcheck as
       'always-defined'. */
-   .n_alwaysDefd = 6,
+   .n_alwaysDefd = 7,
    /* ? :(  */
    .alwaysDefd = {
                   /* 0 */ ALWAYSDEFD64(guest_R0),
@@ -232,6 +234,7 @@ VexGuestLayout loongarch64Guest_layout = {
                   /* 3 */ ALWAYSDEFD64(guest_CMSTART),
                   /* 4 */ ALWAYSDEFD64(guest_CMLEN),
                   /* 5 */ ALWAYSDEFD64(guest_NRADDR),
+                  /* 6 */ ALWAYSDEFD64(guest_IP_AT_SYSCALL),
                   }
 };
 

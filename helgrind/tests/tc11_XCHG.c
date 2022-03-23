@@ -22,6 +22,7 @@
 #undef PLAT_s390x_linux
 #undef PLAT_mips32_linux
 #undef PLAT_riscv64_linux
+#undef PLAT_loongarch64_linux
 #undef PLAT_x86_solaris
 #undef PLAT_amd64_solaris
 
@@ -55,6 +56,8 @@
 #  define PLAT_nanomips_linux 1
 #elif defined(__linux__) && defined(__riscv) && (__riscv_xlen == 64)
 #  define PLAT_riscv64_linux 1
+#elif defined(__linux__) && defined(__loongarch__) && (__loongarch_grlen == 64)
+#  define PLAT_loongarch64_linux 1
 #elif defined(__sun__) && defined(__i386__)
 #  define PLAT_x86_solaris 1
 #elif defined(__sun__) && defined(__x86_64__)
@@ -152,6 +155,21 @@
         } while (0)
 #  endif
 #  define XCHG_M_R_with_redundant_LOCK(_addr,_lval) \
+      XCHG_M_R(_addr,_lval)
+
+#elif defined(PLAT_loongarch64_linux)
+#  define XCHG_M_R(_addr,_lval)                              \
+   __asm__ __volatile__(                                     \
+      "move $t0, %2 \n\t"                                    \
+      "ll.w $t1, %1 \n\t"                                    \
+      "sc.w $t0, %1 \n\t"                                    \
+      "move %0, $t1 \n\t"                                    \
+      : /*out*/ "=r"(_lval), "+ZC"(_addr)                    \
+      : /*in*/  "r"(_lval)                                   \
+      : "$t0", "$t1", "memory"                               \
+   )
+
+#  define XCHG_M_R_with_redundant_LOCK(_addr,_lval)          \
       XCHG_M_R(_addr,_lval)
 
 #else

@@ -78,6 +78,8 @@ __attribute__((noinline)) static void get_guest_arch(VexArch    *ga)
    *ga = VexArchNANOMIPS;
 #elif defined(VGA_riscv64)
    *ga = VexArchRISCV64;
+#elif defined(VGA_loongarch64)
+   *ga = VexArchLOONGARCH64;
 #else
    missing arch;
 #endif
@@ -116,6 +118,7 @@ static VexEndness arch_endness (VexArch va) {
             return VexEndnessBE;
       }
    case VexArchRISCV64: return VexEndnessLE;
+   case VexArchLOONGARCH64: return VexEndnessLE;
    default: failure_exit();
    }
 }
@@ -143,6 +146,7 @@ static UInt arch_hwcaps (VexArch va) {
 #endif
    case VexArchNANOMIPS: return 0;
    case VexArchRISCV64: return 0;
+   case VexArchLOONGARCH64: return VEX_HWCAPS_LOONGARCH_ISA_64BIT;
    default: failure_exit();
    }
 }
@@ -161,6 +165,7 @@ static Bool mode64 (VexArch va) {
    case VexArchMIPS64: return True;
    case VexArchNANOMIPS: return False;
    case VexArchRISCV64: return True;
+   case VexArchLOONGARCH64: return True;
    default: failure_exit();
    }
 }
@@ -280,7 +285,7 @@ int main(int argc, char **argv)
    // explicitly via command line arguments.
    if (multiarch) {
       VexArch va;
-      for (va = VexArchX86; va <= VexArchRISCV64; va++) {
+      for (va = VexArchX86; va <= VexArchLOONGARCH64; va++) {
          vta.arch_host = va;
          vta.archinfo_host.endness = arch_endness (vta.arch_host);
          vta.archinfo_host.hwcaps = arch_hwcaps (vta.arch_host);
