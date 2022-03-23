@@ -1481,6 +1481,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
                     "AMD Athlon or above)\n");
         VG_(printf)("   * AMD Athlon64/Opteron\n");
         VG_(printf)("   * ARM (armv7)\n");
+        VG_(printf)("   * LoongArch (3A5000 and above)\n");
         VG_(printf)("   * MIPS (mips32 and above; mips64 and above)\n");
         VG_(printf)("   * PowerPC (most; ppc405 and above)\n");
         VG_(printf)("   * System z (64bit only - s390x; z990 and above)\n");
@@ -2536,6 +2537,11 @@ static void final_tidyup(ThreadId tid)
    VG_TRACK(post_reg_write, Vg_CoreClientReq, tid,
             offsetof(VexGuestS390XState, guest_r2),
             sizeof(VG_(threads)[tid].arch.vex.guest_r2));
+#  elif defined(VGA_loongarch64)
+   VG_(threads)[tid].arch.vex.guest_R4 = to_run;
+   VG_TRACK(post_reg_write, Vg_CoreClientReq, tid,
+            offsetof(VexGuestLOONGARCH64State, guest_R4),
+            sizeof(VG_(threads)[tid].arch.vex.guest_R4));
 #else
    I_die_here : architecture missing in m_main.c
 #endif
@@ -3064,6 +3070,29 @@ asm(
     ".set pop                                           \n\t"
 ".previous                                              \n\t"
 );
+#elif defined(VGP_loongarch64_linux)
+asm("                                                           \n\t"
+    ".text                                                      \n\t"
+    ".globl _start                                              \n\t"
+    ".type _start,@function                                     \n\t"
+    "_start:                                                    \n\t"
+    /* t0 = &vgPlain_interim_stack + VG_STACK_GUARD_SZB +
+       VG_DEFAULT_STACK_ACTIVE_SZB */
+    "la.local  $t0, vgPlain_interim_stack                       \n\t"
+    "li.w      $t1, "VG_STRINGIFY(VG_STACK_GUARD_SZB)"          \n\t"
+    "add.d     $t0, $t0, $t1                                    \n\t"
+    "li.w      $t2, "VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)" \n\t"
+    "add.d     $t0, $t0, $t2                                    \n\t"
+    /* allocate 16 bytes on the new stack in t0, and aligned */
+    "addi.d    $t0, $t0, -16                                    \n\t"
+    "bstrins.d $t0, $zero, 3, 0                                 \n\t"
+    /* a0 = sp, sp = t0, and then call _start_in_C_linux */
+    "move      $a0, $sp                                         \n\t"
+    "move      $sp, $t0                                         \n\t"
+    "la.local  $t0, _start_in_C_linux                           \n\t"
+    "jr        $t0                                              \n\t"
+    ".previous                                                  \n\t"
+);
 #else
 #  error "Unknown platform"
 #endif
@@ -3109,11 +3138,11 @@ void _start_in_C_linux ( UWord* pArgc )
 #  if defined(VGP_ppc32_linux) || defined(VGP_ppc64be_linux) \
       || defined(VGP_ppc64le_linux) || defined(VGP_arm64_linux) \
       || defined(VGP_mips32_linux)  || defined(VGP_mips64_linux) \
-      || defined(VGP_nanomips_linux)
+      || defined(VGP_nanomips_linux) || defined(VGP_loongarch64_linux)
    {
-      /* ppc32/ppc64, arm64, mips32/64 can be configured with different
-         page sizes. Determine this early. This is an ugly hack and really
-         should be moved into valgrind_main. */
+      /* ppc32/ppc64, arm64, mips32/64, loongarch64 can be configured with
+         different page sizes. Determine this early. This is an ugly hack
+         and really should be moved into valgrind_main. */
       UWord *sp = &pArgc[1+argc+1];
       while (*sp++ != 0)
          ;

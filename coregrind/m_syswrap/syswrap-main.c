@@ -60,20 +60,21 @@
 /* Useful info which needs to be recorded somewhere:
    Use of registers in syscalls is:
 
-          NUM   ARG1 ARG2 ARG3 ARG4 ARG5 ARG6 ARG7 ARG8 RESULT
+               NUM   ARG1 ARG2 ARG3 ARG4 ARG5 ARG6 ARG7 ARG8 RESULT
    LINUX:
-   x86    eax   ebx  ecx  edx  esi  edi  ebp  n/a  n/a  eax       (== NUM)
-   amd64  rax   rdi  rsi  rdx  r10  r8   r9   n/a  n/a  rax       (== NUM)
-   ppc32  r0    r3   r4   r5   r6   r7   r8   n/a  n/a  r3+CR0.SO (== ARG1)
-   ppc64  r0    r3   r4   r5   r6   r7   r8   n/a  n/a  r3+CR0.SO (== ARG1)
-   arm    r7    r0   r1   r2   r3   r4   r5   n/a  n/a  r0        (== ARG1)
-   mips32 v0    a0   a1   a2   a3 stack stack n/a  n/a  v0        (== NUM)
-   mips64 v0    a0   a1   a2   a3   a4   a5   a6   a7   v0        (== NUM)
-   arm64  x8    x0   x1   x2   x3   x4   x5   n/a  n/a  x0 ??     (== ARG1??)
+   x86         eax   ebx  ecx  edx  esi  edi  ebp  n/a  n/a  eax       (== NUM)
+   amd64       rax   rdi  rsi  rdx  r10  r8   r9   n/a  n/a  rax       (== NUM)
+   ppc32       r0    r3   r4   r5   r6   r7   r8   n/a  n/a  r3+CR0.SO (== ARG1)
+   ppc64       r0    r3   r4   r5   r6   r7   r8   n/a  n/a  r3+CR0.SO (== ARG1)
+   arm         r7    r0   r1   r2   r3   r4   r5   n/a  n/a  r0        (== ARG1)
+   mips32      v0    a0   a1   a2   a3 stack stack n/a  n/a  v0        (== NUM)
+   mips64      v0    a0   a1   a2   a3   a4   a5   a6   a7   v0        (== NUM)
+   arm64       x8    x0   x1   x2   x3   x4   x5   n/a  n/a  x0 ??     (== ARG1??)
+   loongarch64 r11   r4   r5   r6   r7   r8   r9   n/a  n/a  r4        (== ARG1)
 
    FreeBSD:
-   x86    eax +4   +8   +12  +16  +20  +24  +28  +32  edx:eax, eflags.c
-   amd64  rax rdi  rsi  rdx  rcx  r8   r9   +8   +16  rdx:rax, rflags.c
+   x86         eax   +4   +8   +12  +16  +20  +24  +28  +32  edx:eax, eflags.c
+   amd64       rax   rdi  rsi  rdx  rcx  r8   r9   +8   +16  rdx:rax, rflags.c
 
    On s390x the svc instruction is used for system calls. The system call
    number is encoded in the instruction (8 bit immediate field). Since Linux
@@ -703,6 +704,17 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    canonical->arg6  = gst->guest_r9;    // a5
    canonical->arg7  = gst->guest_r10;   // a6
    canonical->arg8  = gst->guest_r11;   // a7
+
+#elif defined(VGP_loongarch64_linux)
+   VexGuestLOONGARCH64State* gst = (VexGuestLOONGARCH64State*)gst_vanilla;
+   canonical->sysno = gst->guest_R11;   // a7
+   canonical->arg1  = gst->guest_R4;    // a0
+   canonical->arg2  = gst->guest_R5;    // a1
+   canonical->arg3  = gst->guest_R6;    // a2
+   canonical->arg4  = gst->guest_R7;    // a3
+   canonical->arg5  = gst->guest_R8;    // a4
+   canonical->arg6  = gst->guest_R9;    // a5
+
 #elif defined(VGP_x86_darwin)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    UWord *stack = (UWord *)gst->guest_ESP;
@@ -1126,6 +1138,16 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
    gst->guest_r10 = canonical->arg7;
    gst->guest_r11 = canonical->arg8;
 
+#elif defined(VGP_loongarch64_linux)
+   VexGuestLOONGARCH64State* gst = (VexGuestLOONGARCH64State*)gst_vanilla;
+   gst->guest_R11 = canonical->sysno;
+   gst->guest_R4  = canonical->arg1;
+   gst->guest_R5  = canonical->arg2;
+   gst->guest_R6  = canonical->arg3;
+   gst->guest_R7  = canonical->arg4;
+   gst->guest_R8  = canonical->arg5;
+   gst->guest_R9  = canonical->arg6;
+
 #elif defined(VGP_x86_solaris)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    UWord *stack = (UWord *)gst->guest_ESP;
@@ -1240,6 +1262,13 @@ void getSyscallStatusFromGuestState ( /*OUT*/SyscallStatus*     canonical,
    RegWord  a0 = gst->guest_r4;    // a0
    canonical->sres = VG_(mk_SysRes_nanomips_linux)(a0);
    canonical->what = SsComplete;
+
+#  elif defined(VGP_loongarch64_linux)
+   VexGuestLOONGARCH64State* gst = (VexGuestLOONGARCH64State*)gst_vanilla;
+   ULong                     a0  = gst->guest_R4;    // a0
+   canonical->sres = VG_(mk_SysRes_loongarch64_linux)(a0);
+   canonical->what = SsComplete;
+
 #  elif defined(VGP_amd64_freebsd)
    /* duplicates logic in m_signals.VG_UCONTEXT_SYSCALL_SYSRES */
    VexGuestAMD64State* gst = (VexGuestAMD64State*)gst_vanilla;
@@ -1606,6 +1635,20 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
    VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
              OFFSET_mips32_r4, sizeof(UWord) );
 
+#  elif defined(VGP_loongarch64_linux)
+   VexGuestLOONGARCH64State* gst = (VexGuestLOONGARCH64State*)gst_vanilla;
+   vg_assert(canonical->what == SsComplete);
+   if (sr_isError(canonical->sres)) {
+      /* This isn't exactly right, in that really a Failure with res
+         not in the range 1 .. 4095 is unrepresentable in the
+         Linux-loongarch64 scheme.  Oh well. */
+      gst->guest_R4 = - (Long)sr_Err(canonical->sres);
+   } else {
+      gst->guest_R4 = sr_Res(canonical->sres);
+   }
+   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
+             OFFSET_loongarch64_R4, sizeof(UWord) );
+
 #  elif defined(VGP_x86_solaris)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    SysRes sres = canonical->sres;
@@ -1854,6 +1897,15 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->o_arg6   = OFFSET_amd64_R9;
    layout->s_arg7   = sizeof(UWord) * 1;
    layout->s_arg8   = sizeof(UWord) * 2;
+
+#elif defined(VGP_loongarch64_linux)
+   layout->o_sysno  = OFFSET_loongarch64_R11;
+   layout->o_arg1   = OFFSET_loongarch64_R4;
+   layout->o_arg2   = OFFSET_loongarch64_R5;
+   layout->o_arg3   = OFFSET_loongarch64_R6;
+   layout->o_arg4   = OFFSET_loongarch64_R7;
+   layout->o_arg5   = OFFSET_loongarch64_R8;
+   layout->o_arg6   = OFFSET_loongarch64_R9;
 
 #else
 #  error "getSyscallLayout: unknown arch"
@@ -2899,6 +2951,25 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
          arch->vex.guest_PC -= 2;
       }
    }
+
+#elif defined(VGP_loongarch64_linux)
+   arch->vex.guest_PC -= 4;             // sizeof(loongarch instr)
+
+   /* Make sure our caller is actually sane, and we're really backing
+      back over a syscall.
+
+      syscall 0 == 00 2B 00 00
+   */
+   {
+      UChar *p = (UChar *)(Addr)(arch->vex.guest_PC);
+      if (p[0] != 0x00 || p[1] != 0x00 || p[2] != 0x2B || p[3] != 0x00)
+         VG_(message)(Vg_DebugMsg,
+                      "?! restarting over syscall at %#llx %02x %02x %02x %02x\n",
+                      (ULong)arch->vex.guest_PC, p[0], p[1], p[2], p[3]);
+
+      vg_assert(p[0] == 0x00 && p[1] == 0x00 && p[2] == 0x2B && p[3] == 0x00);
+   }
+
 #elif defined(VGP_x86_solaris)
    arch->vex.guest_EIP -= 2;   // sizeof(int $0x91) or sizeof(syscall)
 

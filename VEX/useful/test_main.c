@@ -101,7 +101,8 @@ int main ( int argc, char** argv )
    VexTranslateResult tres;
    VexControl vcon;
    VexGuestExtents vge;
-   VexArchInfo vai_x86, vai_amd64, vai_ppc32, vai_arm, vai_mips32, vai_mips64;
+   VexArchInfo vai_x86, vai_amd64, vai_ppc32, vai_arm, vai_mips32, vai_mips64,
+               vai_loongarch64;
    VexAbiInfo vbi;
    VexTranslateArgs vta;
 
@@ -190,6 +191,10 @@ int main ( int argc, char** argv )
       LibVEX_default_VexArchInfo(&vai_mips64);
       vai_mips64.endness = VexEndnessLE;
 
+      LibVEX_default_VexArchInfo(&vai_loongarch64);
+      vai_loongarch64.hwcaps = VEX_HWCAPS_LOONGARCH_ISA_64BIT;
+      vai_loongarch64.endness = VexEndnessLE;
+
       LibVEX_default_VexAbiInfo(&vbi);
       vbi.guest_stack_redzone_size = 128;
 
@@ -244,6 +249,12 @@ int main ( int argc, char** argv )
          analyser in the front end happy.  */
       vta.guest_bytes     = &origbuf[18 +1];
       vta.guest_bytes_addr = (Addr) &origbuf[18 +1];
+#endif
+#if 0 /* loongarch64 -> loongarch64 */
+      vta.arch_guest     = VexArchLOONGARCH64;
+      vta.archinfo_guest = vai_loongarch64;
+      vta.arch_host      = VexArchLOONGARCH64;
+      vta.archinfo_host  = vai_loongarch64;
 #endif
 
 #if 1 /* no instrumentation */

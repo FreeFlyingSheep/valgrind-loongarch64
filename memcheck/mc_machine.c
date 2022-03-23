@@ -1396,6 +1396,118 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
 #  undef GOF
 #  undef SZB
 
+   /* ----------------- loongarch64 ----------------- */
+
+#  elif defined(VGA_loongarch64)
+
+#  define GOF(_fieldname) \
+      (offsetof(VexGuestLOONGARCH64State,guest_##_fieldname))
+#  define SZB(_fieldname) \
+      (sizeof(((VexGuestLOONGARCH64State*)0)->guest_##_fieldname))
+
+   Int  o      = offset;
+   Int  sz     = szB;
+   Bool is48   = sz == 8 || sz == 4;
+   Bool is1248 = sz == 8 || sz == 4 || sz == 2 || sz == 1;
+
+   tl_assert(sz > 0);
+   tl_assert(host_is_little_endian());
+
+   if (o == GOF(R0)  && is1248) return o;
+   if (o == GOF(R1)  && is1248) return o;
+   if (o == GOF(R2)  && is1248) return o;
+   if (o == GOF(R3)  && is1248) return o;
+   if (o == GOF(R4)  && is1248) return o;
+   if (o == GOF(R5)  && is1248) return o;
+   if (o == GOF(R6)  && is1248) return o;
+   if (o == GOF(R7)  && is1248) return o;
+   if (o == GOF(R8)  && is1248) return o;
+   if (o == GOF(R9)  && is1248) return o;
+   if (o == GOF(R10) && is1248) return o;
+   if (o == GOF(R11) && is1248) return o;
+   if (o == GOF(R12) && is1248) return o;
+   if (o == GOF(R13) && is1248) return o;
+   if (o == GOF(R14) && is1248) return o;
+   if (o == GOF(R15) && is1248) return o;
+   if (o == GOF(R16) && is1248) return o;
+   if (o == GOF(R17) && is1248) return o;
+   if (o == GOF(R18) && is1248) return o;
+   if (o == GOF(R19) && is1248) return o;
+   if (o == GOF(R20) && is1248) return o;
+   if (o == GOF(R21) && is1248) return o;
+   if (o == GOF(R22) && is1248) return o;
+   if (o == GOF(R23) && is1248) return o;
+   if (o == GOF(R24) && is1248) return o;
+   if (o == GOF(R25) && is1248) return o;
+   if (o == GOF(R26) && is1248) return o;
+   if (o == GOF(R27) && is1248) return o;
+   if (o == GOF(R28) && is1248) return o;
+   if (o == GOF(R29) && is1248) return o;
+   if (o == GOF(R30) && is1248) return o;
+   if (o == GOF(R31) && is1248) return o;
+
+   if (o == GOF(PC)  && sz == 8) return -1;  /* slot unused */
+
+   if (o >= GOF(X0)  && o + sz <= GOF(X0)  + SZB(X0))  return GOF(X0);
+   if (o >= GOF(X1)  && o + sz <= GOF(X1)  + SZB(X1))  return GOF(X1);
+   if (o >= GOF(X2)  && o + sz <= GOF(X2)  + SZB(X2))  return GOF(X2);
+   if (o >= GOF(X3)  && o + sz <= GOF(X3)  + SZB(X3))  return GOF(X3);
+   if (o >= GOF(X4)  && o + sz <= GOF(X4)  + SZB(X4))  return GOF(X4);
+   if (o >= GOF(X5)  && o + sz <= GOF(X5)  + SZB(X5))  return GOF(X5);
+   if (o >= GOF(X6)  && o + sz <= GOF(X6)  + SZB(X6))  return GOF(X6);
+   if (o >= GOF(X7)  && o + sz <= GOF(X7)  + SZB(X7))  return GOF(X7);
+   if (o >= GOF(X8)  && o + sz <= GOF(X8)  + SZB(X8))  return GOF(X8);
+   if (o >= GOF(X9)  && o + sz <= GOF(X9)  + SZB(X9))  return GOF(X9);
+   if (o >= GOF(X10) && o + sz <= GOF(X10) + SZB(X10)) return GOF(X10);
+   if (o >= GOF(X11) && o + sz <= GOF(X11) + SZB(X11)) return GOF(X11);
+   if (o >= GOF(X12) && o + sz <= GOF(X12) + SZB(X12)) return GOF(X12);
+   if (o >= GOF(X13) && o + sz <= GOF(X13) + SZB(X13)) return GOF(X13);
+   if (o >= GOF(X14) && o + sz <= GOF(X14) + SZB(X14)) return GOF(X14);
+   if (o >= GOF(X15) && o + sz <= GOF(X15) + SZB(X15)) return GOF(X15);
+   if (o >= GOF(X16) && o + sz <= GOF(X16) + SZB(X16)) return GOF(X16);
+   if (o >= GOF(X17) && o + sz <= GOF(X17) + SZB(X17)) return GOF(X17);
+   if (o >= GOF(X18) && o + sz <= GOF(X18) + SZB(X18)) return GOF(X18);
+   if (o >= GOF(X19) && o + sz <= GOF(X19) + SZB(X19)) return GOF(X19);
+   if (o >= GOF(X20) && o + sz <= GOF(X20) + SZB(X20)) return GOF(X20);
+   if (o >= GOF(X21) && o + sz <= GOF(X21) + SZB(X21)) return GOF(X21);
+   if (o >= GOF(X22) && o + sz <= GOF(X22) + SZB(X22)) return GOF(X22);
+   if (o >= GOF(X23) && o + sz <= GOF(X23) + SZB(X23)) return GOF(X23);
+   if (o >= GOF(X24) && o + sz <= GOF(X24) + SZB(X24)) return GOF(X24);
+   if (o >= GOF(X25) && o + sz <= GOF(X25) + SZB(X25)) return GOF(X25);
+   if (o >= GOF(X26) && o + sz <= GOF(X26) + SZB(X26)) return GOF(X26);
+   if (o >= GOF(X27) && o + sz <= GOF(X27) + SZB(X27)) return GOF(X27);
+   if (o >= GOF(X28) && o + sz <= GOF(X28) + SZB(X28)) return GOF(X28);
+   if (o >= GOF(X29) && o + sz <= GOF(X29) + SZB(X29)) return GOF(X29);
+   if (o >= GOF(X30) && o + sz <= GOF(X30) + SZB(X30)) return GOF(X30);
+   if (o >= GOF(X31) && o + sz <= GOF(X31) + SZB(X31)) return GOF(X31);
+
+   if (o == GOF(FCC0) && sz == 1) return -1;  /* slot unused */
+   if (o == GOF(FCC1) && sz == 1) return -1;  /* slot unused */
+   if (o == GOF(FCC2) && sz == 1) return -1;  /* slot unused */
+   if (o == GOF(FCC3) && sz == 1) return -1;  /* slot unused */
+   if (o == GOF(FCC4) && sz == 1) return -1;  /* slot unused */
+   if (o == GOF(FCC5) && sz == 1) return -1;  /* slot unused */
+   if (o == GOF(FCC6) && sz == 1) return -1;  /* slot unused */
+   if (o == GOF(FCC7) && sz == 1) return -1;  /* slot unused */
+   if (o == GOF(FCSR) && sz == 4) return -1;  /* slot unused */
+
+   if (o == GOF(EMNOTE) && sz == 4) return -1;  /* slot unused */
+
+   if (o == GOF(CMSTART) && sz == 8) return -1;  /* slot unused */
+   if (o == GOF(CMLEN)   && sz == 8) return -1;  /* slot unused */
+
+   if (o == GOF(NRADDR)  && sz == 8) return -1;  /* slot unused */
+
+   if (o == GOF(LLSC_SIZE) && sz == 8) return -1;  /* slot unused */
+   if (o == GOF(LLSC_ADDR) && sz == 8) return -1;  /* slot unused */
+   if (o == GOF(LLSC_DATA) && is48)    return -1;  /* slot unused */
+
+   VG_(printf)("MC_(get_otrack_shadow_offset)(loongarch64)(off=%d,sz=%d)\n",
+               offset,szB);
+   tl_assert(0);
+#  undef GOF
+#  undef SZB
+
 #  else
 #    error "FIXME: not implemented for this architecture"
 #  endif
@@ -1513,6 +1625,13 @@ IRType MC_(get_otrack_reg_array_equiv_int_type) ( IRRegArray* arr )
    /* --------------------- mips64 --------------------- */
 #  elif defined(VGA_mips64)
    VG_(printf)("get_reg_array_equiv_int_type(mips64): unhandled: ");
+   ppIRRegArray(arr);
+   VG_(printf)("\n");
+   tl_assert(0);
+
+   /* ----------------- loongarch64 ----------------- */
+#  elif defined(VGA_loongarch64)
+   VG_(printf)("get_reg_array_equiv_int_type(loongarch64): unhandled: ");
    ppIRRegArray(arr);
    VG_(printf)("\n");
    tl_assert(0);

@@ -83,7 +83,7 @@
 #if defined(VGA_amd64) || defined(VGA_arm64) \
     || defined(VGA_ppc64be) || defined(VGA_ppc64le) \
     || (defined(VGA_mips64) && defined(VGABI_64)) \
-    || defined(VGA_s390x)
+    || defined(VGA_s390x) || defined(VGA_loongarch64)
   // And all other 64-bit hosts
 # define VG_FAST_CACHE_SET_BITS 6
   // These FCS_{g,h}{0,1,2,3} are the values of

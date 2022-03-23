@@ -152,6 +152,13 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
       = VG_(threads)[tid].arch.vex.guest_r31;
    regs->misc.MIPS64.r28
       = VG_(threads)[tid].arch.vex.guest_r28;
+#  elif defined(VGA_loongarch64)
+   regs->r_pc = VG_(threads)[tid].arch.vex.guest_PC;
+   regs->r_sp = VG_(threads)[tid].arch.vex.guest_R3;
+   regs->misc.LOONGARCH64.r_fp
+      = VG_(threads)[tid].arch.vex.guest_R22;
+   regs->misc.LOONGARCH64.r_ra
+      = VG_(threads)[tid].arch.vex.guest_R1;
 #  else
 #    error "Unknown arch"
 #  endif
@@ -369,6 +376,39 @@ static void apply_to_GPs_of_tid(ThreadId tid, void (*f)(ThreadId,
    (*f)(tid, "x28", vex->guest_X28);
    (*f)(tid, "x29", vex->guest_X29);
    (*f)(tid, "x30", vex->guest_X30);
+#elif defined(VGA_loongarch64)
+   (*f)(tid, "r0" , vex->guest_R0 );
+   (*f)(tid, "r1" , vex->guest_R1 );
+   (*f)(tid, "r2" , vex->guest_R2 );
+   (*f)(tid, "r3" , vex->guest_R3 );
+   (*f)(tid, "r4" , vex->guest_R4 );
+   (*f)(tid, "r5" , vex->guest_R5 );
+   (*f)(tid, "r6" , vex->guest_R6 );
+   (*f)(tid, "r7" , vex->guest_R7 );
+   (*f)(tid, "r8" , vex->guest_R8 );
+   (*f)(tid, "r9" , vex->guest_R9 );
+   (*f)(tid, "r10", vex->guest_R10);
+   (*f)(tid, "r11", vex->guest_R11);
+   (*f)(tid, "r12", vex->guest_R12);
+   (*f)(tid, "r13", vex->guest_R13);
+   (*f)(tid, "r14", vex->guest_R14);
+   (*f)(tid, "r15", vex->guest_R15);
+   (*f)(tid, "r16", vex->guest_R16);
+   (*f)(tid, "r17", vex->guest_R17);
+   (*f)(tid, "r18", vex->guest_R18);
+   (*f)(tid, "r19", vex->guest_R19);
+   (*f)(tid, "r20", vex->guest_R20);
+   (*f)(tid, "r21", vex->guest_R21);
+   (*f)(tid, "r22", vex->guest_R22);
+   (*f)(tid, "r23", vex->guest_R23);
+   (*f)(tid, "r24", vex->guest_R24);
+   (*f)(tid, "r25", vex->guest_R25);
+   (*f)(tid, "r26", vex->guest_R26);
+   (*f)(tid, "r27", vex->guest_R27);
+   (*f)(tid, "r28", vex->guest_R28);
+   (*f)(tid, "r29", vex->guest_R29);
+   (*f)(tid, "r30", vex->guest_R30);
+   (*f)(tid, "r31", vex->guest_R31);
 #else
 #  error Unknown arch
 #endif
@@ -479,7 +519,7 @@ Int VG_(machine_arm_archlevel) = 4;
    testing, so we need a VG_MINIMAL_JMP_BUF. */
 #if defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le) \
     || defined(VGA_arm) || defined(VGA_s390x) || defined(VGA_mips32) \
-    || defined(VGA_mips64) || defined(VGA_arm64)
+    || defined(VGA_mips64) || defined(VGA_arm64) || defined(VGA_loongarch64)
 #include "pub_core_libcsetjmp.h"
 static VG_MINIMAL_JMP_BUF(env_unsup_insn);
 static void handler_unsup_insn ( Int x ) {
@@ -860,6 +900,105 @@ static Bool VG_(parse_cpuinfo)(void)
 }
 
 #endif /* defined(VGP_arm64_linux) */
+
+#if defined(VGA_loongarch64)
+
+/*
+ * Initialize hwcaps by parsing /proc/cpuinfo.  Returns False if it can not
+ * determine what CPU it is (it searches only for the models that are or may be
+ * supported by Valgrind).
+ */
+static Bool VG_(parse_cpuinfo)(void)
+{
+   Int    n, fh;
+   SysRes fd;
+   SizeT  num_bytes, file_buf_size;
+   HChar  *file_buf;
+
+   const char *search_Loongson_str = "Model Name\t\t: Loongson";
+
+   /* Slurp contents of /proc/cpuinfo into FILE_BUF */
+   fd = VG_(open)("/proc/cpuinfo", 0, VKI_S_IRUSR);
+   if (sr_isError(fd))
+      return False;
+
+   fh = sr_Res(fd);
+
+   /* Determine the size of /proc/cpuinfo.
+      Work around broken-ness in /proc file system implementation.
+      fstat returns a zero size for /proc/cpuinfo although it is
+      claimed to be a regular file. */
+   num_bytes = 0;
+   file_buf_size = 1000;
+   file_buf = VG_(malloc)("cpuinfo", file_buf_size + 1);
+   while (True) {
+      n = VG_(read)(fh, file_buf, file_buf_size);
+      if (n < 0)
+         break;
+
+      num_bytes += n;
+      if (n < file_buf_size)
+         break;  /* reached EOF */
+   }
+
+   if (n < 0)
+      num_bytes = 0;  /* read error; ignore contents */
+
+   if (num_bytes > file_buf_size) {
+      VG_(free)(file_buf);
+      VG_(lseek)(fh, 0, VKI_SEEK_SET);
+      file_buf = VG_(malloc)("cpuinfo", num_bytes + 1);
+      n = VG_(read)(fh, file_buf, num_bytes);
+      if (n < 0)
+         num_bytes = 0;
+   }
+
+   file_buf[num_bytes] = '\0';
+   VG_(close)(fh);
+
+   /* Parse file */
+   vai.hwcaps = 0;
+   if (VG_(strstr)(file_buf, search_Loongson_str) == NULL) {
+      /* Did not find string in the proc file. */
+      VG_(free)(file_buf);
+      return False;
+   }
+
+   if (VG_(strstr)(file_buf, "loongarch32") != NULL)
+      vai.hwcaps |= VEX_HWCAPS_LOONGARCH_ISA_32BIT;
+   if (VG_(strstr)(file_buf, "loongarch64") != NULL)
+      vai.hwcaps |= VEX_HWCAPS_LOONGARCH_ISA_64BIT;
+
+   if (VG_(strstr)(file_buf, "cpucfg") != NULL)
+      vai.hwcaps |= VEX_HWCAPS_LOONGARCH_CPUCFG;
+   if (VG_(strstr)(file_buf, "lam") != NULL)
+      vai.hwcaps |= VEX_HWCAPS_LOONGARCH_LAM;
+   if (VG_(strstr)(file_buf, "ual") != NULL)
+      vai.hwcaps |= VEX_HWCAPS_LOONGARCH_UAL;
+   if (VG_(strstr)(file_buf, "fpu") != NULL)
+      vai.hwcaps |= VEX_HWCAPS_LOONGARCH_FP;
+   if (VG_(strstr)(file_buf, "lsx") != NULL)
+      vai.hwcaps |= VEX_HWCAPS_LOONGARCH_LSX;
+   if (VG_(strstr)(file_buf, "lasx") != NULL)
+      vai.hwcaps |= VEX_HWCAPS_LOONGARCH_LASX;
+   if (VG_(strstr)(file_buf, "complex") != NULL)
+      vai.hwcaps |= VEX_HWCAPS_LOONGARCH_COMPLEX;
+   if (VG_(strstr)(file_buf, "crypto") != NULL)
+      vai.hwcaps |= VEX_HWCAPS_LOONGARCH_CRYPTO;
+   if (VG_(strstr)(file_buf, "lvz") != NULL)
+      vai.hwcaps |= VEX_HWCAPS_LOONGARCH_LVZP;
+   if (VG_(strstr)(file_buf, "lbt_x86") != NULL)
+      vai.hwcaps |= VEX_HWCAPS_LOONGARCH_X86BT;
+   if (VG_(strstr)(file_buf, "lbt_arm") != NULL)
+      vai.hwcaps |= VEX_HWCAPS_LOONGARCH_ARMBT;
+   if (VG_(strstr)(file_buf, "lbt_mips") != NULL)
+      vai.hwcaps |= VEX_HWCAPS_LOONGARCH_MIPSBT;
+
+   VG_(free)(file_buf);
+   return True;
+}
+
+#endif /* defined(VGP_loongarch64) */
 
 Bool VG_(machine_get_hwcaps)( void )
 {
@@ -2230,6 +2369,54 @@ Bool VG_(machine_get_hwcaps)( void )
 
      return True;
    }
+
+#elif defined(VGA_loongarch64)
+   {
+      va = VexArchLOONGARCH64;
+      vai.endness = VexEndnessLE;
+      vai.hwcaps = 0;
+
+      if (!VG_(parse_cpuinfo)())
+         return False;
+
+      /* Same instruction set detection algorithm as for ppc32/arm... */
+      vki_sigset_t          saved_set, tmp_set;
+      vki_sigaction_fromK_t saved_sigill_act;
+      vki_sigaction_toK_t   tmp_sigill_act;
+
+      vg_assert(sizeof(vki_sigaction_fromK_t) == sizeof(vki_sigaction_toK_t));
+
+      VG_(sigemptyset)(&tmp_set);
+      VG_(sigaddset)(&tmp_set, VKI_SIGILL);
+
+      Int r;
+      r = VG_(sigprocmask)(VKI_SIG_UNBLOCK, &tmp_set, &saved_set);
+      vg_assert(r == 0);
+
+      r = VG_(sigaction)(VKI_SIGILL, NULL, &saved_sigill_act);
+      vg_assert(r == 0);
+      tmp_sigill_act = saved_sigill_act;
+
+      /* NODEFER: signal handler does not return (from the kernel's point of
+         view), hence if it is to successfully catch a signal more than once,
+         we need the NODEFER flag. */
+      tmp_sigill_act.sa_flags &= ~VKI_SA_RESETHAND;
+      tmp_sigill_act.sa_flags &= ~VKI_SA_SIGINFO;
+      tmp_sigill_act.sa_flags |=  VKI_SA_NODEFER;
+      tmp_sigill_act.ksa_handler = handler_unsup_insn;
+      VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
+
+      VG_(convert_sigaction_fromK_to_toK)(&saved_sigill_act, &tmp_sigill_act);
+      VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
+      VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
+
+      VG_(debugLog)(1, "machine", "hwcaps = 0x%x\n", vai.hwcaps);
+
+      VG_(machine_get_cache_info)(&vai);
+
+      return True;
+   }
+
 #else
 #  error "Unknown arch"
 #endif
@@ -2370,6 +2557,9 @@ Int VG_(machine_get_size_of_largest_guest_register) ( void )
 #  elif defined(VGA_mips64)
    return 8;
 
+#  elif defined(VGA_loongarch64)
+   return 8;
+
 #  else
 #    error "Unknown arch"
 #  endif
@@ -2386,7 +2576,7 @@ void* VG_(fnptr_to_fnentry)( void* f )
       || defined(VGP_s390x_linux) || defined(VGP_mips32_linux) \
       || defined(VGP_mips64_linux) || defined(VGP_arm64_linux) \
       || defined(VGP_x86_solaris) || defined(VGP_amd64_solaris) \
-      || defined(VGP_nanomips_linux)
+      || defined(VGP_nanomips_linux) || defined(VGP_loongarch64_linux)
    return f;
 #  elif defined(VGP_ppc64be_linux)
    /* ppc64-linux uses the AIX scheme, in which f is a pointer to a

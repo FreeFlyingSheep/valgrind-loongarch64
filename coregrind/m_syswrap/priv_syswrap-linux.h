@@ -515,6 +515,13 @@ extern UInt do_syscall_clone_nanomips_linux ( Word (*fn) (void *),  /* a0 - 4 */
                                               Int*  child_tid,      /* a4 - 8 */
                                               Int*  parent_tid,     /* a5 - 9 */
                                               void* tls_ptr);       /* a6 - 10 */
+extern UInt do_syscall_clone_loongarch64_linux ( Word (*fn) (void *), /* a0 */
+                                                 void* stack,         /* a1 */
+                                                 Int   flags,         /* a2 */
+                                                 void* arg,           /* a3 */
+                                                 Int*  child_tid,     /* a4 */
+                                                 Int*  parent_tid,    /* a5 */
+                                                 void* tls_ptr);      /* a6 */
 #endif   // __PRIV_SYSWRAP_LINUX_H
 
 /*--------------------------------------------------------------------*/

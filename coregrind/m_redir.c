@@ -1240,6 +1240,7 @@ Bool VG_(is_soname_ld_so) (const HChar *soname)
    if (VG_STREQ(soname, VG_U_LD_LINUX_AARCH64_SO_1)) return True;
    if (VG_STREQ(soname, VG_U_LD_LINUX_ARMHF_SO_3))   return True;
    if (VG_STREQ(soname, VG_U_LD_LINUX_MIPSN8_S0_1))  return True;
+   if (VG_STREQ(soname, VG_U_LD_LINUX_LOONGARCH_LP64D_SO_1)) return True;
 #  elif defined(VGO_freebsd)
    if (VG_STREQ(soname, VG_U_LD_ELF_SO_1))   return True;
    if (VG_STREQ(soname, VG_U_LD_ELF32_SO_1))   return True;
@@ -1675,6 +1676,22 @@ void VG_(redir_initialise) ( void )
       add_hardwired_spec(
          "ld.so.1", "index",
          (Addr)&VG_(nanomips_linux_REDIR_FOR_index),
+         complain_about_stripped_glibc_ldso
+      );
+   }
+
+#elif defined(VGP_loongarch64_linux)
+   /* If we're using memcheck, use these intercepts right from
+      the start, otherwise ld.so makes a lot of noise. */
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      add_hardwired_spec(
+         "ld-linux-loongarch-lp64d.so.1", "strlen",
+         (Addr)&VG_(loongarch64_linux_REDIR_FOR_strlen),
+         complain_about_stripped_glibc_ldso
+      );
+      add_hardwired_spec(
+         "ld-linux-loongarch-lp64d.so.1", "strchr",
+         (Addr)&VG_(loongarch64_linux_REDIR_FOR_strchr),
          complain_about_stripped_glibc_ldso
       );
    }
