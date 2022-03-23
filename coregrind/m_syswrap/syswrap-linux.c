@@ -311,7 +311,15 @@ static void run_a_thread_NORETURN ( Word tidW )
          : "memory" , "$t4", "$a0"
       );
 #elif defined(VGP_loongarch64_linux)
-      /* TODO */
+      asm volatile (
+         "st.w    %1,  %0 \n\t"     /* set tst->status = VgTs_Empty */
+         "li.w    $a7, %2 \n\t"     /* set a7 = __NR_exit */
+         "ld.w    $a0, %3 \n\t"     /* set a0 = tst->os_state.exitcode */
+         "syscall 0       \n\t"     /* exit(tst->os_state.exitcode) */
+         : "=m" (tst->status)
+         : "r" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode)
+         : "memory", "a0", "a7"
+      );
 #else
 # error Unknown platform
 #endif
@@ -538,7 +546,12 @@ static SysRes clone_new_thread ( Word (*fn)(void *),
        child_tidptr, parent_tidptr, NULL);
    res = VG_ (mk_SysRes_nanomips_linux) (ret);
 #elif defined(VGP_loongarch64_linux)
-   /* TODO */
+   UInt ret = 0;
+   ctst->arch.vex.guest_R4 = 0;
+   ret = do_syscall_clone_loongarch64_linux
+      (ML_(start_thread_NORETURN), stack, flags, ctst,
+       child_tidptr, parent_tidptr, NULL);
+   res = VG_(mk_SysRes_loongarch64_linux)(ret);
 #else
 # error Unknown platform
 #endif
@@ -602,7 +615,7 @@ static SysRes setup_child_tls (ThreadId ctid, Addr tlsaddr)
    ctst->arch.vex.guest_ULR = tlsaddr;
    ctst->arch.vex.guest_r27 = tlsaddr;
 #elif defined(VGP_loongarch64_linux)
-   /* TODO */
+   ctst->arch.vex.guest_R2 = tlsaddr;
 #else
 # error Unknown platform
 #endif
