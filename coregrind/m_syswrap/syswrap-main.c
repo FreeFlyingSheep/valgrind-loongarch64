@@ -703,6 +703,10 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    canonical->arg6  = gst->guest_r9;    // a5
    canonical->arg7  = gst->guest_r10;   // a6
    canonical->arg8  = gst->guest_r11;   // a7
+
+#elif defined(VGP_loongarch64_linux)
+   /* TODO */
+
 #elif defined(VGP_x86_darwin)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    UWord *stack = (UWord *)gst->guest_ESP;
@@ -1126,6 +1130,9 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
    gst->guest_r10 = canonical->arg7;
    gst->guest_r11 = canonical->arg8;
 
+#elif defined(VGP_loongarch64_linux)
+   /* TODO */
+
 #elif defined(VGP_x86_solaris)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    UWord *stack = (UWord *)gst->guest_ESP;
@@ -1240,6 +1247,10 @@ void getSyscallStatusFromGuestState ( /*OUT*/SyscallStatus*     canonical,
    RegWord  a0 = gst->guest_r4;    // a0
    canonical->sres = VG_(mk_SysRes_nanomips_linux)(a0);
    canonical->what = SsComplete;
+
+#  elif defined(VGP_loongarch64_linux)
+   /* TODO */
+
 #  elif defined(VGP_amd64_freebsd)
    /* duplicates logic in m_signals.VG_UCONTEXT_SYSCALL_SYSRES */
    VexGuestAMD64State* gst = (VexGuestAMD64State*)gst_vanilla;
@@ -1606,6 +1617,9 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
    VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
              OFFSET_mips32_r4, sizeof(UWord) );
 
+#  elif defined(VGP_loongarch64_linux)
+   /* TODO */
+
 #  elif defined(VGP_x86_solaris)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    SysRes sres = canonical->sres;
@@ -1854,6 +1868,9 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->o_arg6   = OFFSET_amd64_R9;
    layout->s_arg7   = sizeof(UWord) * 1;
    layout->s_arg8   = sizeof(UWord) * 2;
+
+#elif defined(VGP_loongarch64_linux)
+   /* TODO */
 
 #else
 #  error "getSyscallLayout: unknown arch"
@@ -2899,6 +2916,10 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
          arch->vex.guest_PC -= 2;
       }
    }
+
+#elif defined(VGP_loongarch64_linux)
+   /* TODO */
+
 #elif defined(VGP_x86_solaris)
    arch->vex.guest_EIP -= 2;   // sizeof(int $0x91) or sizeof(syscall)
 

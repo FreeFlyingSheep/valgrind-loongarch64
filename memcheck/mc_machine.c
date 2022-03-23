@@ -1396,6 +1396,12 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
 #  undef GOF
 #  undef SZB
 
+   /* ----------------- loongarch64 ----------------- */
+
+#  elif defined(VGA_loongarch64)
+
+   /* TODO */
+
 #  else
 #    error "FIXME: not implemented for this architecture"
 #  endif
@@ -1516,6 +1522,10 @@ IRType MC_(get_otrack_reg_array_equiv_int_type) ( IRRegArray* arr )
    ppIRRegArray(arr);
    VG_(printf)("\n");
    tl_assert(0);
+
+   /* ----------------- loongarch64 ----------------- */
+#  elif defined(VGA_loongarch64)
+   /* TODO */
 
 #  else
 #    error "FIXME: not implemented for this architecture"

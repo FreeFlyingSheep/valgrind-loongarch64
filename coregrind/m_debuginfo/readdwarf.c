@@ -2066,6 +2066,10 @@ void ML_(read_debuginfo_dwarf1) (
 #  define FP_REG         30
 #  define SP_REG         29
 #  define RA_REG_DEFAULT 31
+#elif defined(VGP_loongarch64_linux)
+#  define FP_REG         22
+#  define SP_REG         3
+#  define RA_REG_DEFAULT 1
 #else
 #  error "Unknown platform"
 #endif
@@ -2084,6 +2088,8 @@ void ML_(read_debuginfo_dwarf1) (
 # define N_CFI_REGS 128
 #elif defined(VGP_s390x_linux)
 # define N_CFI_REGS 66
+#elif defined(VGP_loongarch64_linux)
+# define N_CFI_REGS 32
 #else
 # define N_CFI_REGS 20
 #endif
@@ -2786,6 +2792,30 @@ static Bool summarise_context(/*OUT*/Addr* base,
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
    /* These don't use CFI based unwinding (is that really true?) */
 
+#  elif defined(VGA_loongarch64)
+
+   /* --- entire tail of this fn specialised for loongarch64 --- */
+
+   SUMMARISE_HOW(si_m->ra_how, si_m->ra_off, ctxs->reg[ctx->ra_reg]);
+   SUMMARISE_HOW(si_m->fp_how, si_m->fp_off, ctxs->reg[FP_REG]);
+
+   /* on loongarch64, it seems the old sp value before the call is always
+      the same as the CFA.  Therefore ... */
+   si_m->sp_how = CFIR_CFAREL;
+   si_m->sp_off = 0;
+
+   /* bogus looking range?  Note, we require that the difference is
+      representable in 32 bits. */
+   if (loc_start >= ctx->loc)
+      { why = 4; goto failed; }
+   if (ctx->loc - loc_start > 10000000 /* let's say */)
+      { why = 5; goto failed; }
+
+   *base = loc_start + ctx->initloc;
+   *len  = (UInt)(ctx->loc - loc_start);
+
+   return True;
+
 #  else
 #    error "Unknown arch"
 #  endif
@@ -2885,6 +2915,13 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
             return ML_(CfiExpr_CfiReg)( dstxa, Creg_ARM64_X30 );
 #        elif defined(VGA_ppc32) || defined(VGA_ppc64be) \
             || defined(VGA_ppc64le)
+#        elif defined(VGA_loongarch64)
+         if (dwreg == SP_REG)
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_LOONGARCH64_SP );
+         if (dwreg == FP_REG)
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_LOONGARCH64_FP );
+         if (dwreg == srcuc->ra_reg)
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_LOONGARCH64_RA );
 #        else
 #           error "Unknown arch"
 #        endif

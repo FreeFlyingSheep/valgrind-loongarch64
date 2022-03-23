@@ -52,7 +52,8 @@ check_PROGRAMS = \
 	power_insn_available \
 	is_ppc64_BE \
 	min_power_isa \
-	arm64_features
+	arm64_features \
+	loongarch64_features
 
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)

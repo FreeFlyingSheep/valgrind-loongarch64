@@ -74,6 +74,10 @@
 #  include "vki/vki-scnums-shared-linux.h"
 #  include "vki/vki-scnums-mips64-linux.h"
 
+#elif defined(VGP_loongarch64_linux)
+#  include "vki/vki-scnums-shared-linux.h"
+#  include "vki/vki-scnums-loongarch64-linux.h"
+
 #elif defined(VGP_x86_freebsd) || defined(VGP_amd64_freebsd)
 #  include "vki/vki-scnums-freebsd.h"
 

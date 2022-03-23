@@ -126,6 +126,11 @@
 #  define VG_ELF_MACHINE      EM_NANOMIPS
 #  define VG_ELF_CLASS        ELFCLASS32
 #  undef  VG_PLAT_USES_PPCTOC
+#elif defined(VGP_loongarch64_linux)
+#  define VG_ELF_DATA2XXX     ELFDATA2LSB
+#  define VG_ELF_MACHINE      EM_LOONGARCH
+#  define VG_ELF_CLASS        ELFCLASS64
+#  undef  VG_PLAT_USES_PPCTOC
 #else
 #  error Unknown platform
 #endif
@@ -163,6 +168,10 @@
 #  define VG_INSTR_PTR        guest_PC
 #  define VG_STACK_PTR        guest_r29
 #  define VG_FRAME_PTR        guest_r30
+#elif defined(VGA_loongarch64)
+#  define VG_INSTR_PTR        guest_PC
+#  define VG_STACK_PTR        guest_R3
+#  define VG_FRAME_PTR        guest_R22
 #else
 #  error Unknown arch
 #endif
@@ -232,6 +241,10 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
           then safe to use VG_(machine_get_VexArchInfo) 
    -------------
    s390x: initially:  call VG_(machine_get_hwcaps)
+
+          then safe to use VG_(machine_get_VexArchInfo)
+   -------------
+   loongarch64: initially: call VG_(machine_get_hwcaps)
 
           then safe to use VG_(machine_get_VexArchInfo)
 

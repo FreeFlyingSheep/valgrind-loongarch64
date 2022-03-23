@@ -55,8 +55,8 @@
 
 typedef
    struct {
-      ULong r_pc; /* x86:EIP, amd64:RIP, ppc:CIA, arm:R15, mips:pc */
-      ULong r_sp; /* x86:ESP, amd64:RSP, ppc:R1,  arm:R13, mips:sp */
+      ULong r_pc; /* x86:EIP, amd64:RIP, ppc:CIA, arm:R15, mips:pc, loongarch64:pc */
+      ULong r_sp; /* x86:ESP, amd64:RSP, ppc:R1,  arm:R13, mips:sp, loongarch64:sp */
       union {
          struct {
             UInt r_ebp;
@@ -102,6 +102,10 @@ typedef
             ULong r31;  /* Return address of the last subroutine call */
             ULong r28;
          } MIPS64;
+         struct {
+            ULong r_fp; /* Stack frame pointer or static variable */
+            ULong r_ra; /* Return address of the last subroutine call */
+         } LOONGARCH64;
       } misc;
    }
    UnwindStartRegs;

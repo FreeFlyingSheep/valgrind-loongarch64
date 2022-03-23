@@ -50,9 +50,10 @@
 // Rather we use PTRACE_GETREGS or PTRACE_PEEKUSER.
 
 // The only platform on which we must use PTRACE_GETREGSET is arm64.
+// We use PTRACE_GETREGSET on loongarch64 as well.
 // The resulting vgdb cannot work in a bi-arch setup.
 // -1 means we will check that PTRACE_GETREGSET works.
-#  if defined(VGA_arm64)
+#  if defined(VGA_arm64) || defined(VGA_loongarch64)
 #define USE_PTRACE_GETREGSET
 #  endif
 #endif
@@ -529,6 +530,9 @@ static struct user_regs_struct user_save;
 #    else
 static struct user_pt_regs user_save;
 #    endif
+#  elif defined(VGA_loongarch64)
+/* loongarch64 is extra special, glibc only defined user_regs_struct. */
+static struct user_regs_struct user_save;
 #  else
 static struct user user_save;
 #  endif
@@ -805,6 +809,9 @@ Bool invoker_invoke_gdbserver (pid_t pid)
 #    else
    struct user_pt_regs user_mod;
 #    endif
+#  elif defined(VGA_loongarch64)
+/* loongarch64 is extra special, glibc only defined user_regs_struct. */
+   struct user_regs_struct user_mod;
 #  else
    struct user user_mod;
 #  endif
@@ -874,6 +881,8 @@ Bool invoker_invoke_gdbserver (pid_t pid)
    sp = p[29];
 #elif defined(VGA_mips64)
    sp = user_mod.regs[29];
+#elif defined(VGA_loongarch64)
+   sp = user_mod.regs[3];
 #else
    I_die_here : (sp) architecture missing in vgdb-invoker-ptrace.c
 #endif
@@ -960,6 +969,8 @@ Bool invoker_invoke_gdbserver (pid_t pid)
       p[29] = sp - 32;
 
 #elif defined(VGA_mips64)
+      assert(0); // cannot vgdb a 32 bits executable with a 64 bits exe
+#elif defined(VGA_loongarch64)
       assert(0); // cannot vgdb a 32 bits executable with a 64 bits exe
 #else
       I_die_here : architecture missing in vgdb-invoker-ptrace.c
@@ -1068,6 +1079,12 @@ Bool invoker_invoke_gdbserver (pid_t pid)
       user_mod.regs[31] = bad_return;
       user_mod.regs[34] = shared64->invoke_gdbserver;
       user_mod.regs[25] = shared64->invoke_gdbserver;
+#elif defined(VGA_loongarch64)
+      /* put check arg in register a0 */
+      user_mod.regs[4] = check;
+      /* put NULL return address in ra */
+      user_mod.regs[1] = bad_return;
+      user_mod.csr_era = shared64->invoke_gdbserver;
 #else
       I_die_here: architecture missing in vgdb-invoker-ptrace.c
 #endif

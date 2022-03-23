@@ -264,6 +264,11 @@
         (srP)->misc.MIPS32.r31 = (UInt)ra;                \
         (srP)->misc.MIPS32.r28 = (UInt)gp;                \
       }
+#elif defined(VGP_loongarch64_linux)
+#  define GET_STARTREGS(srP)                              \
+   do {                                                   \
+      /* TODO */                                          \
+   } while (0)
 #else
 #  error Unknown platform
 #endif

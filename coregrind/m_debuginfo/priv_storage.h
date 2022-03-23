@@ -367,6 +367,19 @@ typedef
       Int   fp_off;
    }
    DiCfSI_m;
+#elif defined(VGA_loongarch64)
+typedef
+   struct {
+      UChar cfa_how;  /* a CFIC_ value */
+      UChar ra_how;   /* a CFIR_ value */
+      UChar sp_how;   /* a CFIR_ value */
+      UChar fp_how;   /* a CFIR_ value */
+      Int   cfa_off;
+      Int   ra_off;
+      Int   sp_off;
+      Int   fp_off;
+   }
+   DiCfSI_m;
 #else
 #  error "Unknown arch"
 #endif
@@ -422,7 +435,11 @@ typedef
       Creg_S390_SP,
       Creg_S390_FP,
       Creg_S390_LR,
-      Creg_MIPS_RA
+      Creg_MIPS_RA,
+      Creg_LOONGARCH64_PC,
+      Creg_LOONGARCH64_RA,
+      Creg_LOONGARCH64_SP,
+      Creg_LOONGARCH64_FP
    }
    CfiReg;
 
