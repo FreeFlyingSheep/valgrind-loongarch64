@@ -314,6 +314,17 @@ UWord do_acasW ( UWord* addr, UWord expected, UWord nyu )
    return success;
 }
 
+#elif defined(VGA_loongarch64)
+
+// loongarch64
+/* return 1 if success, 0 if failure */
+UWord do_acasW ( UWord* addr, UWord expected, UWord nyu )
+{
+   /* TODO */
+   assert(0);
+   return 0;
+}
+
 #endif
 
 void atomic_incW ( UWord* w )

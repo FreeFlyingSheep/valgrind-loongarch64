@@ -2520,6 +2520,8 @@ static void final_tidyup(ThreadId tid)
    VG_TRACK(post_reg_write, Vg_CoreClientReq, tid,
             offsetof(VexGuestS390XState, guest_r2),
             sizeof(VG_(threads)[tid].arch.vex.guest_r2));
+#  elif defined(VGA_loongarch64)
+   /* TODO */
 #else
    I_die_here : architecture missing in m_main.c
 #endif
@@ -3048,6 +3050,15 @@ asm(
     ".set pop                                           \n\t"
 ".previous                                              \n\t"
 );
+#elif defined(VGP_loongarch64_linux)
+/* TODO */
+asm("                                                           \n\t"
+    ".text                                                      \n\t"
+    ".globl _start                                              \n\t"
+    ".type _start,@function                                     \n\t"
+    "_start:                                                    \n\t"
+    ".previous                                                  \n\t"
+);
 #else
 #  error "Unknown platform"
 #endif
@@ -3093,11 +3104,11 @@ void _start_in_C_linux ( UWord* pArgc )
 #  if defined(VGP_ppc32_linux) || defined(VGP_ppc64be_linux) \
       || defined(VGP_ppc64le_linux) || defined(VGP_arm64_linux) \
       || defined(VGP_mips32_linux)  || defined(VGP_mips64_linux) \
-      || defined(VGP_nanomips_linux)
+      || defined(VGP_nanomips_linux) || defined(VGP_loongarch64_linux)
    {
-      /* ppc32/ppc64, arm64, mips32/64 can be configured with different
-         page sizes. Determine this early. This is an ugly hack and really
-         should be moved into valgrind_main. */
+      /* ppc32/ppc64, arm64, mips32/64, loongarch64 can be configured with
+         different page sizes. Determine this early. This is an ugly hack
+         and really should be moved into valgrind_main. */
       UWord *sp = &pArgc[1+argc+1];
       while (*sp++ != 0)
          ;

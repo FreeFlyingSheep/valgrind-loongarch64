@@ -660,6 +660,15 @@ get_cache_info(VexArchInfo *vai)
    return True;
 }
 
+#elif defined(VGA_loongarch64)
+
+static Bool
+get_cache_info(VexArchInfo *vai)
+{
+   /* TODO */
+   return False;
+}
+
 #else
 
 #error "Unknown arch"

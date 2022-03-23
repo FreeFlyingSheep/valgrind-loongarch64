@@ -81,7 +81,8 @@ static inline UWord VG_TT_FAST_HASH ( Addr guest ) {
 }
 
 #elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le) \
-      || defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_arm64)
+      || defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_arm64) \
+      || defined(VGA_loongarch64)
 static inline UWord VG_TT_FAST_HASH ( Addr guest ) {
    // Instructions are 4-byte aligned.
    UWord merged = ((UWord)guest) >> 2;

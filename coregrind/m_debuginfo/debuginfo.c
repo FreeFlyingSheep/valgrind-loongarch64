@@ -1262,7 +1262,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    is_ro_map = False;
 
 #  if defined(VGA_x86) || defined(VGA_ppc32) || defined(VGA_mips32) \
-      || defined(VGA_mips64) || defined(VGA_nanomips)
+      || defined(VGA_mips64) || defined(VGA_nanomips) || defined(VGA_loongarch64)
    is_rx_map = seg->hasR && seg->hasX;
    is_rw_map = seg->hasR && seg->hasW;
 #  elif defined(VGA_amd64) || defined(VGA_ppc64be) || defined(VGA_ppc64le)  \
@@ -2998,6 +2998,8 @@ UWord evalCfiExpr ( const XArray* exprs, Int ix,
             case Creg_ARM64_SP: return eec->uregs->sp;
             case Creg_ARM64_X30: return eec->uregs->x30;
             case Creg_ARM64_X29: return eec->uregs->x29;
+#           elif defined(VGA_loongarch64)
+            /* TODO */
 #           else
 #             error "Unsupported arch"
 #           endif
@@ -3269,6 +3271,8 @@ static Addr compute_cfa ( const D3UnwindRegs* uregs,
       case CFIC_ARM64_X29REL: 
          cfa = cfsi_m->cfa_off + uregs->x29;
          break;
+#     elif defined(VGA_loongarch64)
+      /* TODO */
 #     else
 #       error "Unsupported arch"
 #     endif
@@ -3414,6 +3418,8 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
 #  elif defined(VGP_arm64_linux)
    ipHere = uregsHere->pc;
+#  elif defined(VGA_loongarch64)
+   /* TODO */
 #  else
 #    error "Unknown arch"
 #  endif
@@ -3559,6 +3565,8 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    COMPUTE(uregsPrev.sp,  uregsHere->sp,  cfsi_m->sp_how,  cfsi_m->sp_off);
    COMPUTE(uregsPrev.x30, uregsHere->x30, cfsi_m->x30_how, cfsi_m->x30_off);
    COMPUTE(uregsPrev.x29, uregsHere->x29, cfsi_m->x29_how, cfsi_m->x29_off);
+#  elif defined(VGA_loongarch64)
+   /* TODO */
 #  else
 #    error "Unknown arch"
 #  endif

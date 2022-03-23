@@ -628,6 +628,20 @@ VgHashTable *ht_sigchld_ignore = NULL;
         (srP)->misc.MIPS32.r28 = (uc)->uc_mcontext.sc_regs[28]; \
       }
 
+#elif defined(VGP_loongarch64_linux)
+#  define VG_UCONTEXT_INSTR_PTR(uc)      0 /* TODO */
+#  define VG_UCONTEXT_STACK_PTR(uc)      0 /* TODO */
+#  define VG_UCONTEXT_FRAME_PTR(uc)      0 /* TODO */
+#  define VG_UCONTEXT_SYSCALL_NUM(uc)    0 /* TODO */
+#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                              \
+      /* TODO */                                                      \
+      VG_(mk_SysRes_loongarch64_linux)(0)
+
+#  define VG_UCONTEXT_TO_UnwindStartRegs(srP, uc)                     \
+      do {                                                            \
+         /* TODO */                                                   \
+      } while (0)
+
 #elif defined(VGP_x86_solaris)
 #  define VG_UCONTEXT_INSTR_PTR(uc)       ((Addr)(uc)->uc_mcontext.gregs[VKI_EIP])
 #  define VG_UCONTEXT_STACK_PTR(uc)       ((Addr)(uc)->uc_mcontext.gregs[VKI_UESP])
@@ -899,8 +913,10 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
       if (skss_handler != VKI_SIG_IGN && skss_handler != VKI_SIG_DFL)
          skss_flags |= VKI_SA_SIGINFO;
 
+#     if !defined(VGP_loongarch64_linux)
       /* use our own restorer */
       skss_flags |= VKI_SA_RESTORER;
+#     endif
 
       /* Create SKSS entry for this signal. */
       if (sig != VKI_SIGKILL && sig != VKI_SIGSTOP)
@@ -1052,6 +1068,15 @@ extern void my_sigreturn(void);
    "   li $t4, " #name "\n" \
    "   syscall[32]\n" \
    ".previous\n"
+
+#elif defined(VGP_loongarch64_linux)
+#  define _MY_SIGRETURN(name) \
+   ".text\n" \
+   "my_sigreturn:\n" \
+   "   li.w $a7, " #name "\n" \
+   "   syscall 0\n" \
+   ".previous\n"
+
 #elif defined(VGP_x86_solaris) || defined(VGP_amd64_solaris)
 /* Not used on Solaris. */
 #  define _MY_SIGRETURN(name) \
@@ -1111,7 +1136,8 @@ static void handle_SCSS_change ( Bool force_update )
       ksa.sa_flags    = skss.skss_per_sig[sig].skss_flags;
 #     if !defined(VGP_ppc32_linux) && \
          !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
-         !defined(VGP_mips32_linux) && !defined(VGO_solaris) && !defined(VGO_freebsd)
+         !defined(VGP_mips32_linux) && !defined(VGO_solaris) && \
+         !defined(VGO_freebsd) && !defined(VGP_loongarch64_linux)
       ksa.sa_restorer = my_sigreturn;
 #     endif
       /* Re above ifdef (also the assertion below), PaulM says:
@@ -1159,7 +1185,7 @@ static void handle_SCSS_change ( Bool force_update )
             !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
             !defined(VGP_mips32_linux) && !defined(VGP_mips64_linux) && \
             !defined(VGP_nanomips_linux) && !defined(VGO_solaris) && \
-            !defined(VGO_freebsd)
+            !defined(VGO_freebsd) && !defined(VGP_loongarch64_linux)
          vg_assert(ksa_old.sa_restorer == my_sigreturn);
 #        endif
          VG_(sigaddset)( &ksa_old.sa_mask, VKI_SIGKILL );
@@ -1280,7 +1306,7 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
       old_act->sa_flags    = scss.scss_per_sig[signo].scss_flags;
       old_act->sa_mask     = scss.scss_per_sig[signo].scss_mask;
 #     if !defined(VGO_darwin) && !defined(VGO_freebsd) && \
-         !defined(VGO_solaris)
+         !defined(VGO_solaris) && !defined(VGP_loongarch64_linux)
       old_act->sa_restorer = scss.scss_per_sig[signo].scss_restorer;
 #     endif
    }
@@ -1293,7 +1319,7 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
 
       scss.scss_per_sig[signo].scss_restorer = NULL;
 #     if !defined(VGO_darwin) && !defined(VGO_freebsd) && \
-         !defined(VGO_solaris)
+         !defined(VGO_solaris) && !defined(VGP_loongarch64_linux)
       scss.scss_per_sig[signo].scss_restorer = new_act->sa_restorer;
 #     endif
 
@@ -1653,7 +1679,7 @@ void VG_(kill_self)(Int sigNo)
    sa.ksa_handler = VKI_SIG_DFL;
    sa.sa_flags = 0;
 #  if !defined(VGO_darwin) && !defined(VGO_freebsd) && \
-      !defined(VGO_solaris)
+      !defined(VGO_solaris) && !defined(VGP_loongarch64_linux)
    sa.sa_restorer = 0;
 #  endif
    VG_(sigemptyset)(&sa.sa_mask);
@@ -2296,8 +2322,9 @@ void VG_(synth_sigtrap)(ThreadId tid)
 // Synthesise a SIGFPE.
 void VG_(synth_sigfpe)(ThreadId tid, UInt code)
 {
-// Only tested on mips32, mips64, s390x and nanomips.
-#if !defined(VGA_mips32) && !defined(VGA_mips64) && !defined(VGA_s390x) && !defined(VGA_nanomips)
+// Only tested on mips32, mips64, s390x, nanomips and loongarch64.
+#if !defined(VGA_mips32) && !defined(VGA_mips64) && !defined(VGA_s390x) \
+    && !defined(VGA_nanomips) && !defined(VGA_loongarch64)
    vg_assert(0);
 #else
    vki_siginfo_t info;
@@ -3067,7 +3094,7 @@ void pp_ksigaction ( vki_sigaction_toK_t* sa )
                sa->ksa_handler, 
                (UInt)sa->sa_flags, 
 #              if !defined(VGO_darwin) && !defined(VGO_freebsd) && \
-                  !defined(VGO_solaris)
+                  !defined(VGO_solaris) && !defined(VGP_loongarch64_linux)
                   sa->sa_restorer
 #              else
                   (void*)0
@@ -3090,7 +3117,7 @@ void VG_(set_default_handler)(Int signo)
    sa.ksa_handler = VKI_SIG_DFL;
    sa.sa_flags = 0;
 #  if !defined(VGO_darwin) && !defined(VGO_freebsd) && \
-      !defined(VGO_solaris)
+      !defined(VGO_solaris) && !defined(VGP_loongarch64_linux)
    sa.sa_restorer = 0;
 #  endif
    VG_(sigemptyset)(&sa.sa_mask);
@@ -3212,7 +3239,7 @@ void VG_(sigstartup_actions) ( void )
 	 tsa.ksa_handler = (void *)sync_signalhandler;
 	 tsa.sa_flags = VKI_SA_SIGINFO;
 #        if !defined(VGO_darwin) && !defined(VGO_freebsd) && \
-            !defined(VGO_solaris)
+            !defined(VGO_solaris) && !defined(VGP_loongarch64_linux)
 	 tsa.sa_restorer = 0;
 #        endif
 	 VG_(sigfillset)(&tsa.sa_mask);
@@ -3240,7 +3267,7 @@ void VG_(sigstartup_actions) ( void )
 
       scss.scss_per_sig[i].scss_restorer = NULL;
 #     if !defined(VGO_darwin) && !defined(VGO_freebsd) && \
-         !defined(VGO_solaris)
+         !defined(VGO_solaris) && !defined(VGP_loongarch64_linux)
       scss.scss_per_sig[i].scss_restorer = sa.sa_restorer;
 #     endif
 

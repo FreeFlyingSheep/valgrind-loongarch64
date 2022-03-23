@@ -260,6 +260,8 @@ void ML_(ppDiCfSI) ( const XArray* /* of CfiExpr */ exprs,
    SHOW_HOW(si_m->x30_how, si_m->x30_off);
    VG_(printf)(" X29=");
    SHOW_HOW(si_m->x29_how, si_m->x29_off);
+#  elif defined(VGP_loongarch64_linux)
+   /* TODO */
 #  else
 #    error "Unknown arch"
 #  endif
@@ -1010,6 +1012,10 @@ static void ppCfiReg ( CfiReg reg )
       case Creg_S390_SP:   VG_(printf)("SP"); break;
       case Creg_S390_FP:   VG_(printf)("FP"); break;
       case Creg_S390_LR:   VG_(printf)("LR"); break;
+      case Creg_LOONGARCH64_PC: VG_(printf)("PC"); break;
+      case Creg_LOONGARCH64_RA: VG_(printf)("RA"); break;
+      case Creg_LOONGARCH64_SP: VG_(printf)("SP"); break;
+      case Creg_LOONGARCH64_FP: VG_(printf)("FP"); break;
       default: vg_assert(0);
    }
 }

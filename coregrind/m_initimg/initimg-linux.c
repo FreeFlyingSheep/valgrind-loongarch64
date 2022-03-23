@@ -909,7 +909,8 @@ Addr setup_client_stack( void*  init_sp,
             && !defined(VGP_ppc64le_linux) \
             && !defined(VGP_mips32_linux) && !defined(VGP_mips64_linux) \
             && !defined(VGP_nanomips_linux) \
-            && !defined(VGP_s390x_linux)
+            && !defined(VGP_s390x_linux) \
+            && !defined(VGP_loongarch64_linux)
          case AT_SYSINFO_EHDR: {
             /* Trash this, because we don't reproduce it */
             const NSegment* ehdrseg = VG_(am_find_nsegment)((Addr)auxv->u.a_ptr);
@@ -1339,6 +1340,9 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    arch->vex.guest_r29 = iifii.initial_client_SP;
    arch->vex.guest_PC = iifii.initial_client_IP;
    arch->vex.guest_r31 = iifii.initial_client_SP;
+
+#  elif defined(VGP_loongarch64_linux)
+   /* TODO */
 
 #  else
 #    error Unknown platform

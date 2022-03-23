@@ -601,6 +601,20 @@ static UInt local_sys_getpid ( void )
    return a0;
 }
 
+#elif defined(VGP_loongarch64_linux)
+
+static UInt local_sys_write_stderr ( const HChar* buf, Int n )
+{
+   /* TODO */
+   return 0;
+}
+
+static UInt local_sys_getpid ( void )
+{
+   /* TODO */
+   return 0;
+}
+
 #elif defined(VGP_x86_solaris)
 static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {

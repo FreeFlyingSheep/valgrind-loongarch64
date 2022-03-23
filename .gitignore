@@ -53,6 +53,7 @@
 /auxprogs/getoff-mips32-linux
 /auxprogs/getoff-mips64-linux
 /auxprogs/getoff-nanomips-linux
+/auxprogs/getoff-loongarch64-linux
 /auxprogs/getoff-amd64-solaris
 /auxprogs/getoff-x86-solaris
 /auxprogs/getoff-*-freebsd
@@ -2271,6 +2272,7 @@
 /tests/vg_regtest
 /tests/x86_amd64_features
 /tests/arm64_features
+/tests/loongarch64_features
 
 # /VEX/
 /VEX/libvex*.a

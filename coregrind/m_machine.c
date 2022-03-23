@@ -152,6 +152,8 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
       = VG_(threads)[tid].arch.vex.guest_r31;
    regs->misc.MIPS64.r28
       = VG_(threads)[tid].arch.vex.guest_r28;
+#  elif defined(VGA_loongarch64)
+   /* TODO */
 #  else
 #    error "Unknown arch"
 #  endif
@@ -369,6 +371,39 @@ static void apply_to_GPs_of_tid(ThreadId tid, void (*f)(ThreadId,
    (*f)(tid, "x28", vex->guest_X28);
    (*f)(tid, "x29", vex->guest_X29);
    (*f)(tid, "x30", vex->guest_X30);
+#elif defined(VGA_loongarch64)
+   (*f)(tid, "r0" , vex->guest_R0 );
+   (*f)(tid, "r1" , vex->guest_R1 );
+   (*f)(tid, "r2" , vex->guest_R2 );
+   (*f)(tid, "r3" , vex->guest_R3 );
+   (*f)(tid, "r4" , vex->guest_R4 );
+   (*f)(tid, "r5" , vex->guest_R5 );
+   (*f)(tid, "r6" , vex->guest_R6 );
+   (*f)(tid, "r7" , vex->guest_R7 );
+   (*f)(tid, "r8" , vex->guest_R8 );
+   (*f)(tid, "r9" , vex->guest_R9 );
+   (*f)(tid, "r10", vex->guest_R10);
+   (*f)(tid, "r11", vex->guest_R11);
+   (*f)(tid, "r12", vex->guest_R12);
+   (*f)(tid, "r13", vex->guest_R13);
+   (*f)(tid, "r14", vex->guest_R14);
+   (*f)(tid, "r15", vex->guest_R15);
+   (*f)(tid, "r16", vex->guest_R16);
+   (*f)(tid, "r17", vex->guest_R17);
+   (*f)(tid, "r18", vex->guest_R18);
+   (*f)(tid, "r19", vex->guest_R19);
+   (*f)(tid, "r20", vex->guest_R20);
+   (*f)(tid, "r21", vex->guest_R21);
+   (*f)(tid, "r22", vex->guest_R22);
+   (*f)(tid, "r23", vex->guest_R23);
+   (*f)(tid, "r24", vex->guest_R24);
+   (*f)(tid, "r25", vex->guest_R25);
+   (*f)(tid, "r26", vex->guest_R26);
+   (*f)(tid, "r27", vex->guest_R27);
+   (*f)(tid, "r28", vex->guest_R28);
+   (*f)(tid, "r29", vex->guest_R29);
+   (*f)(tid, "r30", vex->guest_R30);
+   (*f)(tid, "r31", vex->guest_R31);
 #else
 #  error Unknown arch
 #endif
@@ -479,7 +514,7 @@ Int VG_(machine_arm_archlevel) = 4;
    testing, so we need a VG_MINIMAL_JMP_BUF. */
 #if defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le) \
     || defined(VGA_arm) || defined(VGA_s390x) || defined(VGA_mips32) \
-    || defined(VGA_mips64) || defined(VGA_arm64)
+    || defined(VGA_mips64) || defined(VGA_arm64) || defined(VGA_loongarch64)
 #include "pub_core_libcsetjmp.h"
 static VG_MINIMAL_JMP_BUF(env_unsup_insn);
 static void handler_unsup_insn ( Int x ) {
@@ -2227,6 +2262,13 @@ Bool VG_(machine_get_hwcaps)( void )
 
      return True;
    }
+
+#elif defined(VGA_loongarch64)
+   {
+      /* TODO */
+      return False;
+   }
+
 #else
 #  error "Unknown arch"
 #endif
@@ -2367,6 +2409,9 @@ Int VG_(machine_get_size_of_largest_guest_register) ( void )
 #  elif defined(VGA_mips64)
    return 8;
 
+#  elif defined(VGA_loongarch64)
+   return 8;
+
 #  else
 #    error "Unknown arch"
 #  endif
@@ -2383,7 +2428,7 @@ void* VG_(fnptr_to_fnentry)( void* f )
       || defined(VGP_s390x_linux) || defined(VGP_mips32_linux) \
       || defined(VGP_mips64_linux) || defined(VGP_arm64_linux) \
       || defined(VGP_x86_solaris) || defined(VGP_amd64_solaris) \
-      || defined(VGP_nanomips_linux)
+      || defined(VGP_nanomips_linux) || defined(VGP_loongarch64_linux)
    return f;
 #  elif defined(VGP_ppc64be_linux)
    /* ppc64-linux uses the AIX scheme, in which f is a pointer to a

@@ -387,6 +387,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_dispatch/dispatch-mips32-linux.S \
 	m_dispatch/dispatch-mips64-linux.S \
 	m_dispatch/dispatch-nanomips-linux.S \
+	m_dispatch/dispatch-loongarch64-linux.S \
 	m_dispatch/dispatch-x86-freebsd.S \
 	m_dispatch/dispatch-amd64-freebsd.S \
 	m_dispatch/dispatch-x86-darwin.S \
@@ -411,6 +412,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_gdbserver/valgrind-low-mips32.c \
 	m_gdbserver/valgrind-low-mips64.c \
 	m_gdbserver/valgrind-low-nanomips.c \
+	m_gdbserver/valgrind-low-loongarch64.c \
 	m_gdbserver/version.c \
 	m_initimg/initimg-linux.c \
 	m_initimg/initimg-freebsd.c \
@@ -438,6 +440,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_sigframe/sigframe-mips32-linux.c \
 	m_sigframe/sigframe-mips64-linux.c \
 	m_sigframe/sigframe-nanomips-linux.c \
+	m_sigframe/sigframe-loongarch64-linux.c \
 	m_sigframe/sigframe-x86-darwin.c \
 	m_sigframe/sigframe-amd64-darwin.c \
 	m_sigframe/sigframe-solaris.c \
@@ -452,6 +455,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syscall-mips32-linux.S \
 	m_syswrap/syscall-mips64-linux.S \
 	m_syswrap/syscall-nanomips-linux.S \
+	m_syswrap/syscall-loongarch64-linux.S \
 	m_syswrap/syscall-x86-freebsd.S \
 	m_syswrap/syscall-amd64-freebsd.S \
 	m_syswrap/syscall-x86-darwin.S \
@@ -477,6 +481,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syswrap-mips32-linux.c \
 	m_syswrap/syswrap-mips64-linux.c \
 	m_syswrap/syswrap-nanomips-linux.c \
+	m_syswrap/syswrap-loongarch64-linux.c \
 	m_syswrap/syswrap-x86-darwin.c \
 	m_syswrap/syswrap-amd64-darwin.c \
 	m_syswrap/syswrap-xen.c \

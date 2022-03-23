@@ -1502,6 +1502,20 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
 #endif
 
+/* ---------------------- loongarch64 ----------------------- */
+#if defined(VGP_loongarch64_linux)
+UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
+                               /*OUT*/Addr* ips, UInt max_n_ips,
+                               /*OUT*/Addr* sps, /*OUT*/Addr* fps,
+                               const UnwindStartRegs* startRegs,
+                               Addr fp_max_orig )
+{
+   /* TODO */
+   return 0;
+}
+
+#endif
+
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
 /*--- END platform-dependent unwinder worker functions     ---*/
