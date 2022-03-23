@@ -477,7 +477,10 @@ configure_caches(cache_t *I1c, cache_t *D1c, cache_t *LLc,
 
 #elif defined(VGA_loongarch64)
 
-   /* TODO */
+   // Set caches to default (for LOONGARCH64 - 3A5000)
+   *I1c = (cache_t) {    65536,  4, 64 };
+   *D1c = (cache_t) {    65536,  4, 64 };
+   *LLc = (cache_t) {   262144, 16, 64 };
 
 #else
 
