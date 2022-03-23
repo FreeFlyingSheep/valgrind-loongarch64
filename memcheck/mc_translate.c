@@ -8658,6 +8658,9 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
       mce.dlbo.dl_CmpEQ64_CmpNE64 = DLexpensive;
 #     elif defined(VGA_arm)
       mce.dlbo.dl_CmpEQ32_CmpNE32 = DLexpensive;
+#     elif defined(VGA_loongarch64)
+      mce.dlbo.dl_CmpEQ32_CmpNE32 = DLexpensive;
+      mce.dlbo.dl_CmpEQ64_CmpNE64 = DLexpensive;
 #     endif
 
       /* preInstrumentationAnalysis() will allocate &mce.tmpHowUsed and then
