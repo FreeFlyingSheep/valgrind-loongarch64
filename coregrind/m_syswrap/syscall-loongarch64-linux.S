@@ -69,12 +69,53 @@
 .globl ML_(do_syscall_for_client_WRK)
 ML_(do_syscall_for_client_WRK):
 
-   /* TODO */
-1:
-2:
-3:
-4:
-5:
+   /* Save regs on stack */
+   addi.d  $sp, $sp, -24
+   st.d    $a1, $sp, 0                      /* guest_state */
+   st.d    $a3, $sp, 8                      /* postmask */
+   st.d    $a4, $sp, 16                     /* sigsetSzB */
+
+1: li.w    $a7, __NR_rt_sigprocmask
+   li.w    $a0, VKI_SIG_SETMASK
+   move    $a1, $a2                         /* syscall_mask */
+   move    $a2, $a3                         /* postmask */
+   move    $a3, $a4                         /* sigsetSzB */
+   syscall 0
+
+   bnez    $a0, 5f
+
+   /* Actually do the client syscall */
+   ld.d    $a6, $sp, 0                      /* guest_state */
+
+   ld.d    $a0, $a6, OFFSET_loongarch64_R4  /* a0 */
+   ld.d    $a1, $a6, OFFSET_loongarch64_R5  /* a1 */
+   ld.d    $a2, $a6, OFFSET_loongarch64_R6  /* a2 */
+   ld.d    $a3, $a6, OFFSET_loongarch64_R7  /* a3 */
+   ld.d    $a4, $a6, OFFSET_loongarch64_R8  /* a4 */
+   ld.d    $a5, $a6, OFFSET_loongarch64_R9  /* a5 */
+
+   ld.d    $a7, $a6, OFFSET_loongarch64_R11 /* syscallno */
+
+2: syscall 0
+
+   /* Saving return values into guest state */
+3: st.d    $a0, $a6, OFFSET_loongarch64_R4  /* a0 */
+
+4: li.w    $a7, __NR_rt_sigprocmask
+   li.w    $a0, VKI_SIG_SETMASK
+   ld.d    $a1, $sp, 8                      /* postmask */
+   move    $a2, $zero                       /* 0 (zero) */
+   ld.d    $a3, $sp, 16                     /* sigsetSzB */
+   syscall 0
+
+   beqz    $a0, 6f
+
+5: /* error */
+   li.w    $a0, 0x8000
+
+6: /* Restore sp and return */
+   addi.d  $sp, $sp, 24
+   jr      $ra
 
 .section .rodata
 /* export the ranges so that
