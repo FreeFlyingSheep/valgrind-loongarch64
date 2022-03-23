@@ -605,14 +605,35 @@ static UInt local_sys_getpid ( void )
 
 static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {
-   /* TODO */
-   return 0;
+   ULong ret;
+   __asm__ volatile (
+      "li.w    $a0, 2  \n\t" // stderr
+      "move    $a1, %1 \n\t"
+      "move    $a2, %2 \n\t"
+      "li.w    $a7, " VG_STRINGIFY(__NR_write) " \n\t"
+      "syscall 0       \n\t"
+      "move    %0, $a0 \n\t"
+      : "=r" (ret)
+      : "r" (buf), "r" (n)
+      : "memory", "$a0", "$a1", "$a2", "$a3", "$a4", "$a5", "$a6", "$a7",
+        "$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7", "$t8"
+   );
+   return ret >= 0 ? (UInt)ret : -1;
 }
 
 static UInt local_sys_getpid ( void )
 {
-   /* TODO */
-   return 0;
+   ULong ret;
+   __asm__ volatile (
+      "li.w    $a7, " VG_STRINGIFY(__NR_getpid) " \n\t"
+      "syscall 0       \n\t"
+      "move    %0, $a0 \n\t"
+      : "=r" (ret)
+      :
+      : "memory", "$a0", "$a1", "$a2", "$a3", "$a4", "$a5", "$a6", "$a7",
+        "$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7", "$t8"
+   );
+   return (UInt)ret;
 }
 
 #elif defined(VGP_x86_solaris)
