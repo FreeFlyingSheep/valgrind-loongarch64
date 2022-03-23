@@ -1750,6 +1750,11 @@ Bool VG_(translate) ( ThreadId tid,
            vex_archinfo.arm64_requires_fallback_LLSC;
 #  endif
 
+#  if defined(VGP_loongarch64_linux)
+   /* For now, we only use fallback LLSC */
+   vex_abiinfo.guest__use_fallback_LLSC = True;
+#  endif
+
    /* Set up closure args. */
    closure.tid    = tid;
    closure.nraddr = nraddr;
