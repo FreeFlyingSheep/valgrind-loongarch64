@@ -3054,12 +3054,26 @@ asm(
 ".previous                                              \n\t"
 );
 #elif defined(VGP_loongarch64_linux)
-/* TODO */
 asm("                                                           \n\t"
     ".text                                                      \n\t"
     ".globl _start                                              \n\t"
     ".type _start,@function                                     \n\t"
     "_start:                                                    \n\t"
+    /* t0 = &vgPlain_interim_stack + VG_STACK_GUARD_SZB +
+       VG_DEFAULT_STACK_ACTIVE_SZB */
+    "la.local  $t0, vgPlain_interim_stack                       \n\t"
+    "li.w      $t1, "VG_STRINGIFY(VG_STACK_GUARD_SZB)"          \n\t"
+    "add.d     $t0, $t0, $t1                                    \n\t"
+    "li.w      $t2, "VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)" \n\t"
+    "add.d     $t0, $t0, $t2                                    \n\t"
+    /* allocate 16 bytes on the new stack in t0, and aligned */
+    "addi.d    $t0, $t0, -16                                    \n\t"
+    "bstrins.d $t0, $zero, 3, 0                                 \n\t"
+    /* a0 = sp, sp = t0, and then call _start_in_C_linux */
+    "move      $a0, $sp                                         \n\t"
+    "move      $sp, $t0                                         \n\t"
+    "la.local  $t0, _start_in_C_linux                           \n\t"
+    "jr        $t0                                              \n\t"
     ".previous                                                  \n\t"
 );
 #else
