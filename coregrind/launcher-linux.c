@@ -67,6 +67,10 @@
 #define EM_NANOMIPS 249
 #endif
 
+#ifndef EM_LOONGARCH
+#define EM_LOONGARCH 258
+#endif
+
 #ifndef E_MIPS_ABI_O32
 #define E_MIPS_ABI_O32 0x00001000
 #endif
@@ -314,6 +318,10 @@ static const char *select_platform(const char *clientname)
                 (header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
                  header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "ppc64le-linux";
+            } else if (header.ehdr64.e_machine == EM_LOONGARCH &&
+                (header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+               platform = "loongarch64-linux";
             }
          } else if (header.c[EI_DATA] == ELFDATA2MSB) {
 #           if !defined(VGPV_arm_linux_android) \
@@ -415,7 +423,8 @@ int main(int argc, char** argv, char** envp)
        (0==strcmp(VG_PLATFORM,"s390x-linux"))  ||
        (0==strcmp(VG_PLATFORM,"mips32-linux")) ||
        (0==strcmp(VG_PLATFORM,"mips64-linux")) ||
-       (0==strcmp(VG_PLATFORM,"nanomips-linux")))
+       (0==strcmp(VG_PLATFORM,"nanomips-linux")) ||
+       (0==strcmp(VG_PLATFORM,"loongarch64-linux")))
       default_platform = VG_PLATFORM;
 #  elif defined(VGO_solaris)
    if ((0==strcmp(VG_PLATFORM,"x86-solaris")) ||
