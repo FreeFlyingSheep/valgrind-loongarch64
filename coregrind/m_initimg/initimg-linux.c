@@ -911,7 +911,8 @@ Addr setup_client_stack( void*  init_sp,
             && !defined(VGP_mips32_linux) && !defined(VGP_mips64_linux) \
             && !defined(VGP_nanomips_linux) \
             && !defined(VGP_s390x_linux) \
-            && !defined(VGP_riscv64_linux)
+            && !defined(VGP_riscv64_linux) \
+            && !defined(VGP_loongarch64_linux)
          case AT_SYSINFO_EHDR: {
             /* Trash this, because we don't reproduce it */
             /* riscv64-linux: Keep the VDSO mapping on this platform present.
@@ -1384,6 +1385,20 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
             offsetof(VexGuestRISCV64State, guest_fcsr), 4);
 
 #define PRECISE_GUEST_REG_DEFINEDNESS_AT_STARTUP 1
+
+#  elif defined(VGP_loongarch64_linux)
+   vg_assert(0 == sizeof(VexGuestLOONGARCH64State) % LibVEX_GUEST_STATE_ALIGN);
+
+   /* Zero out the initial state, and set up the simulated FPU in a
+      sane way. */
+   LibVEX_GuestLOONGARCH64_initialise(&arch->vex);
+
+   /* Zero out the shadow areas. */
+   VG_(memset)(&arch->vex_shadow1, 0, sizeof(VexGuestLOONGARCH64State));
+   VG_(memset)(&arch->vex_shadow2, 0, sizeof(VexGuestLOONGARCH64State));
+
+   arch->vex.guest_R3 = iifii.initial_client_SP;
+   arch->vex.guest_PC = iifii.initial_client_IP;
 
 #  else
 #    error Unknown platform

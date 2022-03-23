@@ -110,5 +110,6 @@ extern void mips32_init_architecture (struct valgrind_target_ops *target);
 extern void mips64_init_architecture (struct valgrind_target_ops *target);
 extern void nanomips_init_architecture (struct valgrind_target_ops *target);
 extern void riscv64_init_architecture (struct valgrind_target_ops *target);
+extern void loongarch64_init_architecture (struct valgrind_target_ops *target);
 
 #endif

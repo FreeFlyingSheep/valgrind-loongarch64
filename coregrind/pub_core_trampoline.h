@@ -185,6 +185,13 @@ extern SizeT  VG_(riscv64_linux_REDIR_FOR_strlen)( const HChar* );
 extern Int    VG_(riscv64_linux_REDIR_FOR_strcmp)( const HChar*, const HChar* );
 #endif
 
+#if defined(VGP_loongarch64_linux)
+extern Addr   VG_(loongarch64_linux_SUBST_FOR_rt_sigreturn);
+extern UInt   VG_(loongarch64_linux_REDIR_FOR_strlen)( void* );
+extern HChar* VG_(loongarch64_linux_REDIR_FOR_strchr)( const HChar*, Int );
+extern Int    VG_(loongarch64_linux_REDIR_FOR_strcmp)( const HChar*, const HChar* );
+#endif
+
 #if defined(VGP_x86_solaris)
 extern SizeT VG_(x86_solaris_REDIR_FOR_strcmp)(const HChar *, const HChar *);
 extern SizeT VG_(x86_solaris_REDIR_FOR_strlen)(const HChar *);

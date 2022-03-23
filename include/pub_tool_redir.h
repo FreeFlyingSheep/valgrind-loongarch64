@@ -323,6 +323,8 @@
 
 #define  VG_U_LD_LINUX_RISCV64_SO_1 "ld-linux-riscv64-lp64d.so.1"
 
+#define  VG_U_LD_LINUX_LOONGARCH_LP64D_SO_1 "ld-linux-loongarch-lp64d.so.1"
+
 #endif
 
 /* --- Sonames for FreeBSD ELF linkers, plus unencoded versions. --- */

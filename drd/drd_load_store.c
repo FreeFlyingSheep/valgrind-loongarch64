@@ -55,6 +55,8 @@
 #define STACK_POINTER_OFFSET OFFSET_mips64_r29
 #elif defined(VGA_riscv64)
 #define STACK_POINTER_OFFSET OFFSET_riscv64_x2
+#elif defined(VGA_loongarch64)
+#define STACK_POINTER_OFFSET OFFSET_loongarch64_R3
 #else
 #error Unknown architecture.
 #endif

@@ -265,6 +265,9 @@ __attribute__((noinline)) void atomic_add_8bit ( char* p, int n )
          : /*trash*/ "memory", "t0", "t1", "t2", "t3", "t4"
       );
    } while (block[2] != 0);
+#elif defined(VGA_loongarch64)
+   /* TODO */
+   assert(0);
 #else
 # error "Unsupported arch"
 #endif
@@ -501,6 +504,9 @@ __attribute__((noinline)) void atomic_add_16bit ( short* p, int n )
          : /*trash*/ "memory", "t0", "t1", "t2", "t3", "t4"
       );
    } while (block[2] != 0);
+#elif defined(VGA_loongarch64)
+   /* TODO */
+   assert(0);
 #else
 # error "Unsupported arch"
 #endif
@@ -674,6 +680,9 @@ __attribute__((noinline)) void atomic_add_32bit ( int* p, int n )
          : /*trash*/ "memory", "t0", "t1", "t2", "t3", "t4"
       );
    } while (block[2] != 0);
+#elif defined(VGA_loongarch64)
+   /* TODO */
+   assert(0);
 #else
 # error "Unsupported arch"
 #endif
@@ -794,6 +803,9 @@ __attribute__((noinline)) void atomic_add_64bit ( long long int* p, int n )
          : /*trash*/ "memory", "t0", "t1", "t2", "t3", "t4"
       );
    } while (block[2] != 0);
+#elif defined(VGA_loongarch64)
+   /* TODO */
+   assert(0);
 #else
 # error "Unsupported arch"
 #endif
@@ -807,7 +819,8 @@ __attribute__((noinline)) void atomic_add_128bit ( MyU128* p,
     || defined(VGA_amd64) \
     || defined(VGA_ppc64be) || defined(VGA_ppc64le) \
     || defined(VGA_arm) \
-    || defined(VGA_s390x) || defined(VGA_riscv64)
+    || defined(VGA_s390x) || defined(VGA_riscv64) \
+    || defined(VGA_loongarch64)
    /* do nothing; is not supported */
 #elif defined(VGA_arm64)
    unsigned long long int block[3]
