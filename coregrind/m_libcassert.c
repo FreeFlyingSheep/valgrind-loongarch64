@@ -266,9 +266,24 @@
       }
 #elif defined(VGP_loongarch64_linux)
 #  define GET_STARTREGS(srP)                              \
-   do {                                                   \
-      /* TODO */                                          \
-   } while (0)
+   {                                                      \
+      ULong pc, sp, fp, ra;                               \
+      __asm__ __volatile__(                               \
+         "pcaddi %0, 0   \n\t"                            \
+         "move   %1, $sp \n\t"                            \
+         "move   %2, $fp \n\t"                            \
+         "move   %3, $ra \n\t"                            \
+         : "=r" (pc),                                     \
+           "=r" (sp),                                     \
+           "=r" (fp),                                     \
+           "=r" (ra)                                      \
+         : /* reads none */                               \
+         : /* no trashed */ );                            \
+      (srP)->r_pc = (ULong)pc;                            \
+      (srP)->r_sp = (ULong)sp;                            \
+      (srP)->misc.LOONGARCH64.r_fp = (ULong)fp;           \
+      (srP)->misc.LOONGARCH64.r_ra = (ULong)ra;           \
+   }
 #else
 #  error Unknown platform
 #endif
