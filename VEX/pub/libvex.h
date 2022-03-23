@@ -436,6 +436,7 @@ void LibVEX_default_VexArchInfo ( /*OUT*/VexArchInfo* vai );
       guest is mips32                     ==> applicable, default True
       guest is mips64                     ==> applicable, default True
       guest is arm64                      ==> applicable, default False
+      guest is loongarch64                ==> const True
 
    host_ppc_calls_use_fndescrs:
       host is ppc32-linux                 ==> False
