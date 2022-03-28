@@ -1,0 +1,72 @@
+amswap.w ::
+old: 1 new: 2
+amswap_db.w ::
+old: 2 new: 2
+amswap.d ::
+old: 1 new: 2
+amswap_db.d ::
+old: 2 new: 2
+amadd.w ::
+old: 2 new: 7
+amadd_db.w ::
+old: 7 new: 12
+amadd.d ::
+old: 2 new: 7
+amadd_db.d ::
+old: 7 new: 12
+amand.w ::
+old: 12 new: 0
+amand_db.w ::
+old: 0 new: 0
+amand.d ::
+old: 12 new: 0
+amand_db.d ::
+old: 0 new: 0
+amor.w ::
+old: 0 new: 8
+amor_db.w ::
+old: 8 new: 8
+amor.d ::
+old: 0 new: 8
+amor_db.d ::
+old: 8 new: 8
+amxor.w ::
+old: 8 new: 12
+amxor_db.w ::
+old: 12 new: 8
+amxor.d ::
+old: 8 new: 12
+amxor_db.d ::
+old: 12 new: 8
+ammax.w ::
+old: 8 new: 16
+ammax_db.w ::
+old: 16 new: 16
+ammax.d ::
+old: 8 new: 16
+ammax_db.d ::
+old: 16 new: 16
+ammin.w ::
+old: 16 new: -1
+ammin_db.w ::
+old: -1 new: -1
+ammin.d ::
+old: 16 new: -1
+ammin_db.d ::
+old: -1 new: -1
+ammax.wu ::
+old: 4294967295 new: 4294967295
+ammax_db.wu ::
+old: 4294967295 new: 4294967295
+ammax.du ::
+old: 18446744073709551615 new: 18446744073709551615
+ammax_db.du ::
+old: 18446744073709551615 new: 18446744073709551615
+ammin.wu ::
+old: 4294967295 new: 6
+ammin_db.wu ::
+old: 6 new: 6
+ammin.du ::
+old: 18446744073709551615 new: 6
+ammin_db.du ::
+old: 6 new: 6

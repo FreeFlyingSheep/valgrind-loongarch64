@@ -1,0 +1,6 @@
+ll.w sc.w ::
+res: 1 val: 7
+res: 1 val: -10
+ll.d sc.d ::
+res: 1 val: 7
+res: 1 val: -10

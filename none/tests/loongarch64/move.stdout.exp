@@ -1,0 +1,156 @@
+movgr2fr.w ::
+input: 0x1234123412341234 0x0123456789abcdef
+output: 0x0123456789abcdef
+movgr2fr.d ::
+input: 0x5678567856785678 0x0123456789abcdef
+output: 0x0123456789abcdef
+movgr2frh.w ::
+input: 0x9abc9abc9abc9abc 0x0123456789abcdef
+output: 0x89abcdef9abc9abc
+movfr2gr.s ::
+input: 0xdef0def0def0def0 0x0123456789abcdef
+output: 0xffffffff89abcdef
+movfrh2gr.s ::
+input: 0x2468246824682468 0x0123456789abcdef
+output: 0x0000000001234567
+movfr2gr.d ::
+input: 0x3579357935793579 0x0123456789abcdef
+output: 0x0123456789abcdef
+movgr2fr.w ::
+input: 0x1234123412341234 0xfedcba9876543210
+output: 0xfedcba9876543210
+movgr2fr.d ::
+input: 0x5678567856785678 0xfedcba9876543210
+output: 0xfedcba9876543210
+movgr2frh.w ::
+input: 0x9abc9abc9abc9abc 0xfedcba9876543210
+output: 0x765432109abc9abc
+movfr2gr.s ::
+input: 0xdef0def0def0def0 0xfedcba9876543210
+output: 0x0000000076543210
+movfrh2gr.s ::
+input: 0x2468246824682468 0xfedcba9876543210
+output: 0xfffffffffedcba98
+movfr2gr.d ::
+input: 0x3579357935793579 0xfedcba9876543210
+output: 0xfedcba9876543210
+movgr2fcsr movfcsr2gr ::
+input: 0x0123456789abcdef
+output: 0x00000000090b01cf
+movgr2fcsr movfcsr2gr ::
+input: 0xfedcba9876543210
+output: 0x0000000016140210
+movgr2fcsr movfcsr2gr ::
+input: 0x0123456789abcdef
+output: 0x000000000000008f
+movgr2fcsr movfcsr2gr ::
+input: 0xfedcba9876543210
+output: 0x0000000000000010
+movgr2fcsr movfcsr2gr ::
+input: 0x0123456789abcdef
+output: 0x00000000090b0000
+movgr2fcsr movfcsr2gr ::
+input: 0xfedcba9876543210
+output: 0x0000000016140000
+movgr2fcsr movfcsr2gr ::
+input: 0x0123456789abcdef
+output: 0x0000000000000100
+movgr2fcsr movfcsr2gr ::
+input: 0xfedcba9876543210
+output: 0x0000000000000200
+movfr2cf movcf2fr ::
+input: 0x1234123412341234 0xffffffffffffffff
+output: 1
+movgr2cf movcf2gr ::
+input: 0x5678567856785678 0xffffffffffffffff
+output: 1
+movfr2cf movcf2fr ::
+input: 0x1234123412341234 0xdef0def0def0def0
+output: 0
+movgr2cf movcf2gr ::
+input: 0x5678567856785678 0xdef0def0def0def0
+output: 0
+movfr2cf movcf2fr ::
+input: 0x1234123412341234 0xffffffffffffffff
+output: 1
+movgr2cf movcf2gr ::
+input: 0x5678567856785678 0xffffffffffffffff
+output: 1
+movfr2cf movcf2fr ::
+input: 0x1234123412341234 0xdef0def0def0def0
+output: 0
+movgr2cf movcf2gr ::
+input: 0x5678567856785678 0xdef0def0def0def0
+output: 0
+movfr2cf movcf2fr ::
+input: 0x1234123412341234 0xffffffffffffffff
+output: 1
+movgr2cf movcf2gr ::
+input: 0x5678567856785678 0xffffffffffffffff
+output: 1
+movfr2cf movcf2fr ::
+input: 0x1234123412341234 0xdef0def0def0def0
+output: 0
+movgr2cf movcf2gr ::
+input: 0x5678567856785678 0xdef0def0def0def0
+output: 0
+movfr2cf movcf2fr ::
+input: 0x1234123412341234 0xffffffffffffffff
+output: 1
+movgr2cf movcf2gr ::
+input: 0x5678567856785678 0xffffffffffffffff
+output: 1
+movfr2cf movcf2fr ::
+input: 0x1234123412341234 0xdef0def0def0def0
+output: 0
+movgr2cf movcf2gr ::
+input: 0x5678567856785678 0xdef0def0def0def0
+output: 0
+movfr2cf movcf2fr ::
+input: 0x1234123412341234 0xffffffffffffffff
+output: 1
+movgr2cf movcf2gr ::
+input: 0x5678567856785678 0xffffffffffffffff
+output: 1
+movfr2cf movcf2fr ::
+input: 0x1234123412341234 0xdef0def0def0def0
+output: 0
+movgr2cf movcf2gr ::
+input: 0x5678567856785678 0xdef0def0def0def0
+output: 0
+movfr2cf movcf2fr ::
+input: 0x1234123412341234 0xffffffffffffffff
+output: 1
+movgr2cf movcf2gr ::
+input: 0x5678567856785678 0xffffffffffffffff
+output: 1
+movfr2cf movcf2fr ::
+input: 0x1234123412341234 0xdef0def0def0def0
+output: 0
+movgr2cf movcf2gr ::
+input: 0x5678567856785678 0xdef0def0def0def0
+output: 0
+movfr2cf movcf2fr ::
+input: 0x1234123412341234 0xffffffffffffffff
+output: 1
+movgr2cf movcf2gr ::
+input: 0x5678567856785678 0xffffffffffffffff
+output: 1
+movfr2cf movcf2fr ::
+input: 0x1234123412341234 0xdef0def0def0def0
+output: 0
+movgr2cf movcf2gr ::
+input: 0x5678567856785678 0xdef0def0def0def0
+output: 0
+movfr2cf movcf2fr ::
+input: 0x1234123412341234 0xffffffffffffffff
+output: 1
+movgr2cf movcf2gr ::
+input: 0x5678567856785678 0xffffffffffffffff
+output: 1
+movfr2cf movcf2fr ::
+input: 0x1234123412341234 0xdef0def0def0def0
+output: 0
+movgr2cf movcf2gr ::
+input: 0x5678567856785678 0xdef0def0def0def0
+output: 0
