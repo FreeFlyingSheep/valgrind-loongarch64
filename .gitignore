@@ -2042,6 +2042,21 @@
 /none/tests/s390x/vec2
 /none/tests/s390x/vec2_float
 
+# /none/tests/loongarch64/
+/none/tests/loongarch64/*.stderr.diff
+/none/tests/loongarch64/*.stderr.out
+/none/tests/loongarch64/*.stdout.diff
+/none/tests/loongarch64/*.stdout.out
+/none/tests/loongarch64/.deps
+/none/tests/loongarch64/Makefile
+/none/tests/loongarch64/Makefile.in
+/none/tests/loongarch64/allexec
+/none/tests/loongarch64/atomic
+/none/tests/loongarch64/branch
+/none/tests/loongarch64/float
+/none/tests/loongarch64/integer
+/none/tests/loongarch64/memory
+
 # /none/tests/scripts/
 /none/tests/scripts/*.dSYM
 /none/tests/scripts/*.so
