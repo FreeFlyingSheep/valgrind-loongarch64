@@ -1067,6 +1067,16 @@
 /memcheck/tests/arm64-linux/Makefile.in
 /memcheck/tests/arm64-linux/scalar
 
+# /memcheck/tests/loongarch64-linux/
+/memcheck/tests/loongarch64-linux/*.stderr.diff
+/memcheck/tests/loongarch64-linux/*.stderr.out
+/memcheck/tests/loongarch64-linux/*.stdout.diff
+/memcheck/tests/loongarch64-linux/*.stdout.out
+/memcheck/tests/loongarch64-linux/.deps
+/memcheck/tests/loongarch64-linux/Makefile
+/memcheck/tests/loongarch64-linux/Makefile.in
+/memcheck/tests/loongarch64-linux/scalar
+
 # /memcheck/tests/common/
 /memcheck/tests/common/Makefile
 /memcheck/tests/common/Makefile.in
