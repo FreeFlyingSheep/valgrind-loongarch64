@@ -135,10 +135,19 @@
       : /*trash*/ "$t0", "$t1", "memory"            \
    )
 #elif defined(PLAT_loongarch64_linux)
-   /* TODO */
-#include <assert.h>
-#  define INC(_lval,_lqual)                         \
-     assert(0);
+#  define INC(_lval,_lqual)                     \
+   __asm__ __volatile__ (                       \
+      "1:                     \n"               \
+      "   move   $t0, %0      \n"               \
+      "   ll.w   $t1, $t0, 0  \n"               \
+      "   addi.w $t1, $t1, 1  \n"               \
+      "   sc.w   $t1, $t0, 0  \n"               \
+      "   li.w   $t2, 1       \n"               \
+      "   bne    $t1, $t2, 1b \n"               \
+      : /*out*/                                 \
+      : /*in*/ "r" (&(_lval))                   \
+      : /*trash*/ "$t0", "$t1", "$t2", "memory" \
+   )
 #else
 #  error "Fix Me for this platform"
 #endif
