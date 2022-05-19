@@ -3252,6 +3252,29 @@ IRAtom* vectorWidenI64 ( MCEnv* mce, IROp longen_op,
    return at2;
 }
 
+static
+IRAtom* vectorWidenUnV128 ( MCEnv* mce, IROp longen_op,
+                            IRAtom* vatom1)
+{
+   IRAtom *at1, *at2;
+   IRAtom* (*pcast)( MCEnv*, IRAtom* );
+   switch (longen_op) {
+      case Iop_WidenHIto16Sx8:  pcast = mkPCast16x8; break;
+      case Iop_WidenHIto16Ux8:  pcast = mkPCast16x8; break;
+      case Iop_WidenHIto32Sx4:  pcast = mkPCast32x4; break;
+      case Iop_WidenHIto32Ux4:  pcast = mkPCast32x4; break;
+      case Iop_WidenHIto64Sx2:  pcast = mkPCast64x2; break;
+      case Iop_WidenHIto64Ux2:  pcast = mkPCast64x2; break;
+      case Iop_WidenHIto128Sx1: pcast = mkPCast128x1; break;
+      case Iop_WidenHIto128Ux1: pcast = mkPCast128x1; break;
+      default: VG_(tool_panic)("vectorWidenUnV128");
+   }
+   tl_assert(isShadowAtom(mce,vatom1));
+   at1 = assignNew('V', mce, Ity_V128, unop(longen_op, vatom1));
+   at2 = assignNew('V', mce, Ity_V128, pcast(mce, at1));
+   return at2;
+}
+
 
 /* --- --- Vector integer arithmetic --- --- */
 
@@ -3505,6 +3528,7 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
       case Iop_MulD64:
       case Iop_MulF64r32:
       case Iop_DivF64:
+      case Iop_ScaleBF64:
       case Iop_DivD64:
       case Iop_DivF64r32:
       case Iop_ScaleF64:
@@ -3524,6 +3548,7 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
       case Iop_SubF32:
       case Iop_MulF32:
       case Iop_DivF32:
+      case Iop_ScaleBF32:
          /* I32(rm) x F32 x F32 -> I32 */
          return mkLazy3(mce, Ity_I32, vatom1, vatom2, vatom3);
       case Iop_AddF16:
@@ -4532,6 +4557,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_TanF64:
       case Iop_2xm1F64:
       case Iop_SqrtF64:
+      case Iop_RSqrtF64:
+      case Iop_LogBF64:
       case Iop_RecpExpF64:
          /* I32(rm) x I64/F64 -> I64/F64 */
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
@@ -4593,6 +4620,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_RoundF32toInt:
       case Iop_SqrtF32:
+      case Iop_RSqrtF32:
+      case Iop_LogBF32:
       case Iop_RecpExpF32:
          /* I32(rm) x I32/F32 -> I32/F32 */
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
@@ -4675,11 +4704,15 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_MaxNumF32:
       case Iop_MinNumF32:
+      case Iop_MaxNumAbsF32:
+      case Iop_MinNumAbsF32:
          /* F32 x F32 -> F32 */
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
 
       case Iop_MaxNumF64:
       case Iop_MinNumF64:
+      case Iop_MaxNumAbsF64:
+      case Iop_MinNumAbsF64:
          /* F64 x F64 -> F64 */
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
@@ -5026,6 +5059,10 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Add64x4:
       case Iop_CmpEQ64x4:
       case Iop_CmpGT64Sx4:
+      case Iop_Max64Sx4:
+      case Iop_Max64Ux4:
+      case Iop_Min64Sx4:
+      case Iop_Min64Ux4:
          return binary64Ix4(mce, vatom1, vatom2);
 
       case Iop_I32StoF32x8:
@@ -5160,6 +5197,10 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_RSqrtEst64Fx2:
       case Iop_RecipEst64Fx2:
       case Iop_Log2_64Fx2:
+      case Iop_RoundF64x2_RM:
+      case Iop_RoundF64x2_RP:
+      case Iop_RoundF64x2_RN:
+      case Iop_RoundF64x2_RZ:
          return unary64Fx2(mce, vatom);
 
       case Iop_Sqrt64F0x2:
@@ -5503,6 +5544,16 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Widen32Sto64x2:
       case Iop_Widen32Uto64x2:
          return vectorWidenI64(mce, op, vatom);
+
+      case Iop_WidenHIto16Sx8:
+      case Iop_WidenHIto32Sx4:
+      case Iop_WidenHIto64Sx2:
+      case Iop_WidenHIto128Sx1:
+      case Iop_WidenHIto16Ux8:
+      case Iop_WidenHIto32Ux4:
+      case Iop_WidenHIto64Ux2:
+      case Iop_WidenHIto128Ux1:
+         return vectorWidenUnV128(mce, op, vatom);
 
       case Iop_F16toF32x4:
          // JRS 2019 Mar 17: this definitely isn't right, but it probably works
