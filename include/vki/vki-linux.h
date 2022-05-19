@@ -531,6 +531,7 @@ typedef struct vki_siginfo {
  * Digital reserves positive values for kernel-generated signals.
  */
 #define VKI_SI_USER	0		/* sent by kill, sigsend, raise */
+#define VKI_SI_KERNEL	0x80		/* sent by the kernel from somewhere */
 #define VKI_SI_TKILL	-6		/* sent by tkill system call */
 
 /*

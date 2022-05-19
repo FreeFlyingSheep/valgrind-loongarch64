@@ -3505,6 +3505,7 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
       case Iop_MulD64:
       case Iop_MulF64r32:
       case Iop_DivF64:
+      case Iop_ScaleBF64:
       case Iop_DivD64:
       case Iop_DivF64r32:
       case Iop_ScaleF64:
@@ -3524,6 +3525,7 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
       case Iop_SubF32:
       case Iop_MulF32:
       case Iop_DivF32:
+      case Iop_ScaleBF32:
          /* I32(rm) x F32 x F32 -> I32 */
          return mkLazy3(mce, Ity_I32, vatom1, vatom2, vatom3);
       case Iop_AddF16:
@@ -4532,6 +4534,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_TanF64:
       case Iop_2xm1F64:
       case Iop_SqrtF64:
+      case Iop_RSqrtF64:
+      case Iop_LogBF64:
       case Iop_RecpExpF64:
          /* I32(rm) x I64/F64 -> I64/F64 */
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
@@ -4593,6 +4597,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_RoundF32toInt:
       case Iop_SqrtF32:
+      case Iop_RSqrtF32:
+      case Iop_LogBF32:
       case Iop_RecpExpF32:
          /* I32(rm) x I32/F32 -> I32/F32 */
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
@@ -4675,11 +4681,15 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_MaxNumF32:
       case Iop_MinNumF32:
+      case Iop_MaxNumAbsF32:
+      case Iop_MinNumAbsF32:
          /* F32 x F32 -> F32 */
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
 
       case Iop_MaxNumF64:
       case Iop_MinNumF64:
+      case Iop_MaxNumAbsF64:
+      case Iop_MinNumAbsF64:
          /* F64 x F64 -> F64 */
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
@@ -5026,6 +5036,10 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Add64x4:
       case Iop_CmpEQ64x4:
       case Iop_CmpGT64Sx4:
+      case Iop_Max64Sx4:
+      case Iop_Max64Ux4:
+      case Iop_Min64Sx4:
+      case Iop_Min64Ux4:
          return binary64Ix4(mce, vatom1, vatom2);
 
       case Iop_I32StoF32x8:

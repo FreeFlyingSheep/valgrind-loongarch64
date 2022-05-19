@@ -588,10 +588,10 @@ typedef
 
       /* Binary operations, with rounding. */
       /* :: IRRoundingMode(I32) x F64 x F64 -> F64 */ 
-      Iop_AddF64, Iop_SubF64, Iop_MulF64, Iop_DivF64,
+      Iop_AddF64, Iop_SubF64, Iop_MulF64, Iop_DivF64, Iop_ScaleBF64,
 
       /* :: IRRoundingMode(I32) x F32 x F32 -> F32 */ 
-      Iop_AddF32, Iop_SubF32, Iop_MulF32, Iop_DivF32,
+      Iop_AddF32, Iop_SubF32, Iop_MulF32, Iop_DivF32, Iop_ScaleBF32,
 
       /* Variants of the above which produce a 64-bit result but which
          round their result to a IEEE float range first. */
@@ -610,10 +610,10 @@ typedef
 
       /* Unary operations, with rounding. */
       /* :: IRRoundingMode(I32) x F64 -> F64 */
-      Iop_SqrtF64,
+      Iop_SqrtF64, Iop_RSqrtF64, Iop_LogBF64,
 
       /* :: IRRoundingMode(I32) x F32 -> F32 */
-      Iop_SqrtF32,
+      Iop_SqrtF32, Iop_RSqrtF32, Iop_LogBF32,
 
       /* :: IRRoundingMode(I32) x F16 -> F16 */
       Iop_SqrtF16,
@@ -829,10 +829,14 @@ typedef
 
       /* --------- Possibly required by IEEE 754-2008. --------- */
 
-      Iop_MaxNumF64,  /* max, F64, numerical operand if other is a qNaN */
-      Iop_MinNumF64,  /* min, F64, ditto */
-      Iop_MaxNumF32,  /* max, F32, ditto */
-      Iop_MinNumF32,  /* min, F32, ditto */
+      Iop_MaxNumF64,    /* max, F64, numerical operand if other is a qNaN */
+      Iop_MinNumF64,    /* min, F64, ditto */
+      Iop_MaxNumAbsF64, /* max abs, F64, ditto */
+      Iop_MinNumAbsF64, /* min abs, F64, ditto */
+      Iop_MaxNumF32,    /* max, F32, ditto */
+      Iop_MinNumF32,    /* min, F32, ditto */
+      Iop_MaxNumAbsF32, /* max abs, F32, ditto */
+      Iop_MinNumAbsF32, /* min abs, F32, ditto */
 
       /* ------------------ 16-bit scalar FP ------------------ */
 
@@ -2006,10 +2010,10 @@ typedef
       Iop_ShrN16x16, Iop_ShrN32x8, Iop_ShrN64x4,
       Iop_SarN16x16, Iop_SarN32x8,
 
-      Iop_Max8Sx32, Iop_Max16Sx16, Iop_Max32Sx8,
-      Iop_Max8Ux32, Iop_Max16Ux16, Iop_Max32Ux8,
-      Iop_Min8Sx32, Iop_Min16Sx16, Iop_Min32Sx8,
-      Iop_Min8Ux32, Iop_Min16Ux16, Iop_Min32Ux8,
+      Iop_Max8Sx32, Iop_Max16Sx16, Iop_Max32Sx8, Iop_Max64Sx4,
+      Iop_Max8Ux32, Iop_Max16Ux16, Iop_Max32Ux8, Iop_Max64Ux4,
+      Iop_Min8Sx32, Iop_Min16Sx16, Iop_Min32Sx8, Iop_Min64Sx4,
+      Iop_Min8Ux32, Iop_Min16Ux16, Iop_Min32Ux8, Iop_Min64Ux4,
 
       Iop_Mul16x16, Iop_Mul32x8,
       Iop_MulHi16Ux16, Iop_MulHi16Sx16,
@@ -2503,6 +2507,7 @@ typedef
       Ijk_SigFPE,         /* current instruction synths generic SIGFPE */
       Ijk_SigFPE_IntDiv,  /* current instruction synths SIGFPE - IntDiv */
       Ijk_SigFPE_IntOvf,  /* current instruction synths SIGFPE - IntOvf */
+      Ijk_SigSYS,         /* current instruction synths SIGSYS */
       /* Unfortunately, various guest-dependent syscall kinds.  They
 	 all mean: do a syscall before continuing. */
       Ijk_Sys_syscall,    /* amd64/x86 'syscall', ppc 'sc', arm 'svc #0' */
@@ -2662,7 +2667,12 @@ typedef
       /* Needed only on ARM.  It cancels a reservation made by a
          preceding Linked-Load, and needs to be handed through to the
          back end, just as LL and SC themselves are. */
-      Imbe_CancelReservation
+      Imbe_CancelReservation,
+      /* Needed only on LOONGARCH64.  It completes the synchronization
+         between the store operation and the instruction fetch operation
+         within a single processor core, and needs to be handed through
+         to the back end. */
+      Imbe_InsnFence
    }
    IRMBusEvent;
 

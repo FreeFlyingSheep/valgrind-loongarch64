@@ -280,6 +280,8 @@ void ppIROp ( IROp op )
       case Iop_SubF64:    vex_printf("SubF64"); return;
       case Iop_MulF64:    vex_printf("MulF64"); return;
       case Iop_DivF64:    vex_printf("DivF64"); return;
+      case Iop_ScaleBF64: vex_printf("ScaleBF64"); return;
+      case Iop_ScaleBF32: vex_printf("ScaleBF32"); return;
       case Iop_AddF64r32: vex_printf("AddF64r32"); return;
       case Iop_SubF64r32: vex_printf("SubF64r32"); return;
       case Iop_MulF64r32: vex_printf("MulF64r32"); return;
@@ -356,6 +358,10 @@ void ppIROp ( IROp op )
       case Iop_SqrtF64:       vex_printf("SqrtF64"); return;
       case Iop_SqrtF32:       vex_printf("SqrtF32"); return;
       case Iop_SqrtF16:       vex_printf("SqrtF16"); return;
+      case Iop_RSqrtF32:      vex_printf("RSqrtF32"); return;
+      case Iop_RSqrtF64:      vex_printf("RSqrtF64"); return;
+      case Iop_LogBF32:       vex_printf("LogBF32"); return;
+      case Iop_LogBF64:       vex_printf("LogBF64"); return;
       case Iop_SinF64:    vex_printf("SinF64"); return;
       case Iop_CosF64:    vex_printf("CosF64"); return;
       case Iop_TanF64:    vex_printf("TanF64"); return;
@@ -379,8 +385,12 @@ void ppIROp ( IROp op )
 
       case Iop_MaxNumF64: vex_printf("MaxNumF64"); return;
       case Iop_MinNumF64: vex_printf("MinNumF64"); return;
+      case Iop_MaxNumAbsF64: vex_printf("MaxNumAbsF64"); return;
+      case Iop_MinNumAbsF64: vex_printf("MinNumAbsF64"); return;
       case Iop_MaxNumF32: vex_printf("MaxNumF32"); return;
       case Iop_MinNumF32: vex_printf("MinNumF32"); return;
+      case Iop_MaxNumAbsF32: vex_printf("MaxNumAbsF32"); return;
+      case Iop_MinNumAbsF32: vex_printf("MinNumAbsF32"); return;
 
       case Iop_F16toF64: vex_printf("F16toF64"); return;
       case Iop_F64toF16: vex_printf("F64toF16"); return;
@@ -1307,16 +1317,20 @@ void ppIROp ( IROp op )
       case Iop_Max8Sx32:  vex_printf("Max8Sx32"); return;
       case Iop_Max16Sx16: vex_printf("Max16Sx16"); return;
       case Iop_Max32Sx8:  vex_printf("Max32Sx8"); return;
+      case Iop_Max64Sx4:  vex_printf("Max64Sx4"); return;
       case Iop_Max8Ux32:  vex_printf("Max8Ux32"); return;
       case Iop_Max16Ux16: vex_printf("Max16Ux16"); return;
       case Iop_Max32Ux8:  vex_printf("Max32Ux8"); return;
+      case Iop_Max64Ux4:  vex_printf("Max64Ux4"); return;
 
       case Iop_Min8Sx32:  vex_printf("Min8Sx32"); return;
       case Iop_Min16Sx16: vex_printf("Min16Sx16"); return;
       case Iop_Min32Sx8:  vex_printf("Min32Sx8"); return;
+      case Iop_Min64Sx4:  vex_printf("Min64Sx4"); return;
       case Iop_Min8Ux32:  vex_printf("Min8Ux32"); return;
       case Iop_Min16Ux16: vex_printf("Min16Ux16"); return;
       case Iop_Min32Ux8:  vex_printf("Min32Ux8"); return;
+      case Iop_Min64Ux4:  vex_printf("Min64Ux4"); return;
 
       case Iop_CmpEQ8x32:   vex_printf("CmpEQ8x32"); return;
       case Iop_CmpEQ16x16:  vex_printf("CmpEQ16x16"); return;
@@ -1434,10 +1448,13 @@ Bool primopMightTrap ( IROp op )
    case Iop_1Uto8: case Iop_1Uto32: case Iop_1Uto64: case Iop_1Sto8:
    case Iop_1Sto16: case Iop_1Sto32: case Iop_1Sto64:
    case Iop_AddF64: case Iop_SubF64: case Iop_MulF64: case Iop_DivF64:
+   case Iop_ScaleBF64: case Iop_ScaleBF32:
    case Iop_AddF32: case Iop_SubF32: case Iop_MulF32: case Iop_DivF32:
    case Iop_AddF64r32: case Iop_SubF64r32: case Iop_MulF64r32:
    case Iop_DivF64r32: case Iop_NegF64: case Iop_AbsF64:
    case Iop_NegF32: case Iop_AbsF32: case Iop_SqrtF64: case Iop_SqrtF32:
+   case Iop_RSqrtF64: case Iop_RSqrtF32:
+   case Iop_LogBF64: case Iop_LogBF32:
    case Iop_NegF16: case Iop_AbsF16: case Iop_SqrtF16: case Iop_SubF16:
    case Iop_AddF16:
    case Iop_CmpF64: case Iop_CmpF32: case Iop_CmpF16: case Iop_CmpF128:
@@ -1477,8 +1494,11 @@ Bool primopMightTrap ( IROp op )
    case Iop_RSqrtEst5GoodF64: case Iop_RoundF64toF64_NEAREST:
    case Iop_RoundF64toF64_NegINF: case Iop_RoundF64toF64_PosINF:
    case Iop_RoundF64toF64_ZERO: case Iop_TruncF64asF32: case Iop_RoundF64toF32:
-   case Iop_RecpExpF64: case Iop_RecpExpF32: case Iop_MaxNumF64:
-   case Iop_MinNumF64: case Iop_MaxNumF32: case Iop_MinNumF32:
+   case Iop_RecpExpF64: case Iop_RecpExpF32:
+   case Iop_MaxNumF64: case Iop_MinNumF64:
+   case Iop_MaxNumAbsF64: case Iop_MinNumAbsF64:
+   case Iop_MaxNumF32: case Iop_MinNumF32:
+   case Iop_MaxNumAbsF32: case Iop_MinNumAbsF32:
    case Iop_F16toF64: case Iop_F64toF16: case Iop_F16toF32:
    case Iop_F32toF16: case Iop_QAdd32S: case Iop_QSub32S:
    case Iop_Add16x2: case Iop_Sub16x2:
@@ -1786,10 +1806,10 @@ Bool primopMightTrap ( IROp op )
    case Iop_ShlN16x16: case Iop_ShlN32x8: case Iop_ShlN64x4:
    case Iop_ShrN16x16: case Iop_ShrN32x8: case Iop_ShrN64x4:
    case Iop_SarN16x16: case Iop_SarN32x8:
-   case Iop_Max8Sx32: case Iop_Max16Sx16: case Iop_Max32Sx8:
-   case Iop_Max8Ux32: case Iop_Max16Ux16: case Iop_Max32Ux8:
-   case Iop_Min8Sx32: case Iop_Min16Sx16: case Iop_Min32Sx8:
-   case Iop_Min8Ux32: case Iop_Min16Ux16: case Iop_Min32Ux8:
+   case Iop_Max8Sx32: case Iop_Max16Sx16: case Iop_Max32Sx8: case Iop_Max64Sx4:
+   case Iop_Max8Ux32: case Iop_Max16Ux16: case Iop_Max32Ux8: case Iop_Max64Ux4:
+   case Iop_Min8Sx32: case Iop_Min16Sx16: case Iop_Min32Sx8: case Iop_Min64Sx4:
+   case Iop_Min8Ux32: case Iop_Min16Ux16: case Iop_Min32Ux8: case Iop_Min64Ux4:
    case Iop_Mul16x16: case Iop_Mul32x8:
    case Iop_MulHi16Ux16: case Iop_MulHi16Sx16:
    case Iop_QAdd8Ux32: case Iop_QAdd16Ux16:
@@ -2075,6 +2095,7 @@ void ppIRJumpKind ( IRJumpKind kind )
       case Ijk_SigFPE:        vex_printf("SigFPE"); break;
       case Ijk_SigFPE_IntDiv: vex_printf("SigFPE_IntDiv"); break;
       case Ijk_SigFPE_IntOvf: vex_printf("SigFPE_IntOvf"); break;
+      case Ijk_SigSYS:        vex_printf("SigSYS"); break;
       case Ijk_Sys_syscall:   vex_printf("Sys_syscall"); break;
       case Ijk_Sys_int32:     vex_printf("Sys_int32"); break;
       case Ijk_Sys_int128:    vex_printf("Sys_int128"); break;
@@ -2094,6 +2115,8 @@ void ppIRMBusEvent ( IRMBusEvent event )
          vex_printf("Fence"); break;
       case Imbe_CancelReservation:
          vex_printf("CancelReservation"); break;
+      case Imbe_InsnFence:
+         vex_printf("InsnFence"); break;
       default:
          vpanic("ppIRMBusEvent");
    }
@@ -3372,12 +3395,14 @@ void typeOfPrimop ( IROp op,
 
       case Iop_AddF64:    case Iop_SubF64: 
       case Iop_MulF64:    case Iop_DivF64:
+      case Iop_ScaleBF64:
       case Iop_AddF64r32: case Iop_SubF64r32: 
       case Iop_MulF64r32: case Iop_DivF64r32:
          TERNARY(ity_RMode,Ity_F64,Ity_F64, Ity_F64);
 
       case Iop_AddF32: case Iop_SubF32:
       case Iop_MulF32: case Iop_DivF32:
+      case Iop_ScaleBF32:
          TERNARY(ity_RMode,Ity_F32,Ity_F32, Ity_F32);
 
       case Iop_AddF16:
@@ -3394,10 +3419,14 @@ void typeOfPrimop ( IROp op,
          UNARY(Ity_F16, Ity_F16);
 
       case Iop_SqrtF64:
+      case Iop_RSqrtF64:
+      case Iop_LogBF64:
       case Iop_RecpExpF64:
          BINARY(ity_RMode,Ity_F64, Ity_F64);
 
       case Iop_SqrtF32:
+      case Iop_RSqrtF32:
+      case Iop_LogBF32:
       case Iop_RoundF32toInt:
       case Iop_RecpExpF32:
          BINARY(ity_RMode,Ity_F32, Ity_F32);
@@ -3406,9 +3435,11 @@ void typeOfPrimop ( IROp op,
          BINARY(ity_RMode, Ity_F16, Ity_F16);
 
       case Iop_MaxNumF64: case Iop_MinNumF64:
+      case Iop_MaxNumAbsF64: case Iop_MinNumAbsF64:
          BINARY(Ity_F64,Ity_F64, Ity_F64);
 
       case Iop_MaxNumF32: case Iop_MinNumF32:
+      case Iop_MaxNumAbsF32: case Iop_MinNumAbsF32:
          BINARY(Ity_F32,Ity_F32, Ity_F32);
 
      case Iop_CmpF16:
@@ -4098,10 +4129,10 @@ void typeOfPrimop ( IROp op,
       case Iop_Mul16x16: case Iop_Mul32x8:
       case Iop_MulHi16Ux16: case Iop_MulHi16Sx16:
       case Iop_Avg8Ux32: case Iop_Avg16Ux16:
-      case Iop_Max8Sx32: case Iop_Max16Sx16: case Iop_Max32Sx8:
-      case Iop_Max8Ux32: case Iop_Max16Ux16: case Iop_Max32Ux8:
-      case Iop_Min8Sx32: case Iop_Min16Sx16: case Iop_Min32Sx8:
-      case Iop_Min8Ux32: case Iop_Min16Ux16: case Iop_Min32Ux8:
+      case Iop_Max8Sx32: case Iop_Max16Sx16: case Iop_Max32Sx8: case Iop_Max64Sx4:
+      case Iop_Max8Ux32: case Iop_Max16Ux16: case Iop_Max32Ux8: case Iop_Max64Ux4:
+      case Iop_Min8Sx32: case Iop_Min16Sx16: case Iop_Min32Sx8: case Iop_Min64Sx4:
+      case Iop_Min8Ux32: case Iop_Min16Ux16: case Iop_Min32Ux8: case Iop_Min64Ux4:
       case Iop_CmpEQ8x32:  case Iop_CmpEQ16x16:
       case Iop_CmpEQ32x8:  case Iop_CmpEQ64x4:
       case Iop_CmpGT8Sx32: case Iop_CmpGT16Sx16:
@@ -5245,7 +5276,9 @@ void tcStmt ( const IRSB* bb, const IRStmt* stmt, IRType gWordTy )
          break;
       case Ist_MBE:
          switch (stmt->Ist.MBE.event) {
-            case Imbe_Fence: case Imbe_CancelReservation:
+            case Imbe_Fence:
+            case Imbe_CancelReservation:
+            case Imbe_InsnFence:
                break;
             default: sanityCheckFail(bb,stmt,"IRStmt.MBE.event: unknown");
                break;
