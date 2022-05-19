@@ -379,8 +379,12 @@ void ppIROp ( IROp op )
 
       case Iop_MaxNumF64: vex_printf("MaxNumF64"); return;
       case Iop_MinNumF64: vex_printf("MinNumF64"); return;
+      case Iop_MaxNumAbsF64: vex_printf("MaxNumAbsF64"); return;
+      case Iop_MinNumAbsF64: vex_printf("MinNumAbsF64"); return;
       case Iop_MaxNumF32: vex_printf("MaxNumF32"); return;
       case Iop_MinNumF32: vex_printf("MinNumF32"); return;
+      case Iop_MaxNumAbsF32: vex_printf("MaxNumAbsF32"); return;
+      case Iop_MinNumAbsF32: vex_printf("MinNumAbsF32"); return;
 
       case Iop_F16toF64: vex_printf("F16toF64"); return;
       case Iop_F64toF16: vex_printf("F64toF16"); return;
@@ -1477,8 +1481,11 @@ Bool primopMightTrap ( IROp op )
    case Iop_RSqrtEst5GoodF64: case Iop_RoundF64toF64_NEAREST:
    case Iop_RoundF64toF64_NegINF: case Iop_RoundF64toF64_PosINF:
    case Iop_RoundF64toF64_ZERO: case Iop_TruncF64asF32: case Iop_RoundF64toF32:
-   case Iop_RecpExpF64: case Iop_RecpExpF32: case Iop_MaxNumF64:
-   case Iop_MinNumF64: case Iop_MaxNumF32: case Iop_MinNumF32:
+   case Iop_RecpExpF64: case Iop_RecpExpF32:
+   case Iop_MaxNumF64: case Iop_MinNumF64:
+   case Iop_MaxNumAbsF64: case Iop_MinNumAbsF64:
+   case Iop_MaxNumF32: case Iop_MinNumF32:
+   case Iop_MaxNumAbsF32: case Iop_MinNumAbsF32:
    case Iop_F16toF64: case Iop_F64toF16: case Iop_F16toF32:
    case Iop_F32toF16: case Iop_QAdd32S: case Iop_QSub32S:
    case Iop_Add16x2: case Iop_Sub16x2:
@@ -3408,9 +3415,11 @@ void typeOfPrimop ( IROp op,
          BINARY(ity_RMode, Ity_F16, Ity_F16);
 
       case Iop_MaxNumF64: case Iop_MinNumF64:
+      case Iop_MaxNumAbsF64: case Iop_MinNumAbsF64:
          BINARY(Ity_F64,Ity_F64, Ity_F64);
 
       case Iop_MaxNumF32: case Iop_MinNumF32:
+      case Iop_MaxNumAbsF32: case Iop_MinNumAbsF32:
          BINARY(Ity_F32,Ity_F32, Ity_F32);
 
      case Iop_CmpF16:

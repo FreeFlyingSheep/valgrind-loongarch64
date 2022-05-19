@@ -829,10 +829,14 @@ typedef
 
       /* --------- Possibly required by IEEE 754-2008. --------- */
 
-      Iop_MaxNumF64,  /* max, F64, numerical operand if other is a qNaN */
-      Iop_MinNumF64,  /* min, F64, ditto */
-      Iop_MaxNumF32,  /* max, F32, ditto */
-      Iop_MinNumF32,  /* min, F32, ditto */
+      Iop_MaxNumF64,    /* max, F64, numerical operand if other is a qNaN */
+      Iop_MinNumF64,    /* min, F64, ditto */
+      Iop_MaxNumAbsF64, /* max abs, F64, ditto */
+      Iop_MinNumAbsF64, /* min abs, F64, ditto */
+      Iop_MaxNumF32,    /* max, F32, ditto */
+      Iop_MinNumF32,    /* min, F32, ditto */
+      Iop_MaxNumAbsF32, /* max abs, F32, ditto */
+      Iop_MinNumAbsF32, /* min abs, F32, ditto */
 
       /* ------------------ 16-bit scalar FP ------------------ */
 

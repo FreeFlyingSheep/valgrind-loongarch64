@@ -313,8 +313,12 @@ static irop_t irops[] = {
   /* --------- Possibly required by IEEE 754-2008. --------- */
   { DEFOP(Iop_MaxNumF64, UNDEF_ALL), .arm = 1 },
   { DEFOP(Iop_MinNumF64, UNDEF_ALL), .arm = 1 },
+  { DEFOP(Iop_MaxNumAbsF64, UNDEF_ALL), .arm = 0 },
+  { DEFOP(Iop_MinNumAbsF64, UNDEF_ALL), .arm = 0 },
   { DEFOP(Iop_MaxNumF32, UNDEF_ALL), .arm = 1 },
   { DEFOP(Iop_MinNumF32, UNDEF_ALL), .arm = 1 },
+  { DEFOP(Iop_MaxNumAbsF32, UNDEF_ALL), .arm = 0 },
+  { DEFOP(Iop_MinNumAbsF32, UNDEF_ALL), .arm = 0 },
 
   /* ------------------ 16-bit scalar FP ------------------ */
   { DEFOP(Iop_F16toF64,  UNDEF_ALL), .arm64 = 1 },
