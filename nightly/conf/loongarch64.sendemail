@@ -1,0 +1,7 @@
+#!/bin/sh
+
+subject=$1
+body=$2
+file=$3
+
+(cat "$body" "$file") | mail -s "$subject" valgrind-testresults@lists.sourceforge.net -f "Feiyang Chen <chris.chenfeiyang@gmail.com>"
