@@ -126,6 +126,14 @@ UWord VG_MINIMAL_SETJMP(VG_MINIMAL_JMP_BUF(_env));
 __attribute__((noreturn))
 void  VG_MINIMAL_LONGJMP(VG_MINIMAL_JMP_BUF(_env));
 
+#elif defined(VGP_loongarch64_linux)
+
+#define VG_MINIMAL_JMP_BUF(_name)        ULong _name [13+8+1]
+__attribute__((returns_twice))
+UWord VG_MINIMAL_SETJMP(VG_MINIMAL_JMP_BUF(_env));
+__attribute__((noreturn))
+void  VG_MINIMAL_LONGJMP(VG_MINIMAL_JMP_BUF(_env));
+
 #else
 
 /* The default implementation. */

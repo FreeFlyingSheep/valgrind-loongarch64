@@ -741,6 +741,72 @@ __asm__(
 );
 #endif  /* VGP_nanomips_linux */
 
+#if defined(VGP_loongarch64_linux)
+
+__asm__(
+".text                      \n\t"
+".globl VG_MINIMAL_SETJMP;  \n\t"
+"VG_MINIMAL_SETJMP:         \n\t"
+"   st.d   $ra,  $a0, 0     \n\t"
+"   st.d   $sp,  $a0, 8     \n\t"
+"   st.d   $x,   $a0, 16    \n\t"
+"   st.d   $fp,  $a0, 24    \n\t"
+"   st.d   $s0,  $a0, 32    \n\t"
+"   st.d   $s1,  $a0, 40    \n\t"
+"   st.d   $s2,  $a0, 48    \n\t"
+"   st.d   $s3,  $a0, 56    \n\t"
+"   st.d   $s4,  $a0, 64    \n\t"
+"   st.d   $s5,  $a0, 72    \n\t"
+"   st.d   $s6,  $a0, 80    \n\t"
+"   st.d   $s7,  $a0, 88    \n\t"
+"   st.d   $s8,  $a0, 96    \n\t"
+#if !defined(__loongarch_soft_float)
+"   fst.d  $f24, $a0, 104   \n\t"
+"   fst.d  $f25, $a0, 112   \n\t"
+"   fst.d  $f26, $a0, 120   \n\t"
+"   fst.d  $f27, $a0, 128   \n\t"
+"   fst.d  $f28, $a0, 136   \n\t"
+"   fst.d  $f29, $a0, 144   \n\t"
+"   fst.d  $f30, $a0, 152   \n\t"
+"   fst.d  $f30, $a0, 160   \n\t"
+#endif
+"   move   $a0, $zero       \n\t"
+"   jr     $ra              \n\t"
+"                           \n\t"
+".text                      \n\t"
+".globl VG_MINIMAL_LONGJMP; \n\t"
+"VG_MINIMAL_LONGJMP:        \n\t"
+"   ld.d   $ra,  $a0, 0     \n\t"
+"   ld.d   $sp,  $a0, 8     \n\t"
+"   ld.d   $x,   $a0, 16    \n\t"
+"   ld.d   $fp,  $a0, 24    \n\t"
+"   ld.d   $s0,  $a0, 32    \n\t"
+"   ld.d   $s1,  $a0, 40    \n\t"
+"   ld.d   $s2,  $a0, 48    \n\t"
+"   ld.d   $s3,  $a0, 56    \n\t"
+"   ld.d   $s4,  $a0, 64    \n\t"
+"   ld.d   $s5,  $a0, 72    \n\t"
+"   ld.d   $s6,  $a0, 80    \n\t"
+"   ld.d   $s7,  $a0, 88    \n\t"
+"   ld.d   $s8,  $a0, 96    \n\t"
+#if !defined(__loongarch_soft_float)
+"   fld.d  $f24, $a0, 104   \n\t"
+"   fld.d  $f25, $a0, 112   \n\t"
+"   fld.d  $f26, $a0, 120   \n\t"
+"   fld.d  $f27, $a0, 128   \n\t"
+"   fld.d  $f28, $a0, 136   \n\t"
+"   fld.d  $f29, $a0, 144   \n\t"
+"   fld.d  $f30, $a0, 152   \n\t"
+"   fld.d  $f30, $a0, 160   \n\t"
+#endif
+"   bnez   $a1,  1f         \n\t"
+"   addi.d $a1,  $a1, 1     \n\t"
+"1:                         \n\t"
+"   move   $a0,  $a1        \n\t"
+"   jr     $ra              \n\t"
+);
+#endif  /* VGP_loongarch64_linux */
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
