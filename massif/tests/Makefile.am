@@ -11,6 +11,7 @@ EXTRA_DIST = \
 	big-alloc.post.exp big-alloc.post.exp-64bit big-alloc.post.exp-ppc64 \
 	big-alloc.stderr.exp big-alloc.vgtest \
 	big-alloc.post.exp-x86-freebsd \
+	big-alloc.post.exp-loongarch64 \
 	bug469146.post.exp bug469146.stderr.exp bug469146.vgtest \
 	deep-A.post.exp deep-A.stderr.exp deep-A.vgtest \
 	deep-B.post.exp deep-B.stderr.exp deep-B.vgtest \
