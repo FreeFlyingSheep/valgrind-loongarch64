@@ -148,6 +148,27 @@
    do {                                                                      \
       __asm__ __volatile__ ("movl $0, %ecx\n\t"); \
    } while (0)
+#elif defined (VGA_loongarch64)
+#define CLEAR_CALLER_SAVED_REGS                                              \
+   do {                                                                      \
+      __asm__ __volatile__ ("move $a0, $zero \n\t"                           \
+                            "move $a1, $zero \n\t"                           \
+                            "move $a2, $zero \n\t"                           \
+                            "move $a3, $zero \n\t"                           \
+                            "move $a4, $zero \n\t"                           \
+                            "move $a5, $zero \n\t"                           \
+                            "move $a6, $zero \n\t"                           \
+                            "move $a7, $zero \n\t"                           \
+                            "move $t0, $zero \n\t"                           \
+                            "move $t1, $zero \n\t"                           \
+                            "move $t2, $zero \n\t"                           \
+                            "move $t3, $zero \n\t"                           \
+                            "move $t4, $zero \n\t"                           \
+                            "move $t5, $zero \n\t"                           \
+                            "move $t6, $zero \n\t"                           \
+                            "move $t7, $zero \n\t"                           \
+                            "move $t8, $zero \n\t");                         \
+   } while (0)
 #else
 #define CLEAR_CALLER_SAVED_REGS  /*nothing*/
 #endif
