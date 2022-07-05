@@ -15,6 +15,7 @@ dist_noinst_SCRIPTS = \
 	filter_gdb filter_make_empty \
 	filter_memcheck_monitor filter_stderr filter_vgdb \
 	filter_helgrind_monitor filter_helgrind_monitor_solaris \
+	filter_helgrind_monitor_loongarch64 \
 	filter_passsigalrm \
 	send_signal
 
