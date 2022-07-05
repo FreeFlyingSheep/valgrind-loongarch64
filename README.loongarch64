@@ -1,0 +1,46 @@
+Status
+~~~~~~
+
+A port to LoongArch64 Linux platform.
+
+Some new IROps:
+
+* Iop_ScaleBF64
+* Iop_ScaleBF32
+* Iop_RSqrtF64
+* Iop_RSqrtF32
+* Iop_LogBF64
+* Iop_LogBF32
+* Iop_MaxNumAbsF64
+* Iop_MinNumAbsF64
+* Iop_MaxNumF32
+* Iop_MinNumF32
+* Iop_MaxNumAbsF32
+* Iop_MinNumAbsF32
+
+A new IRMBusEvent:
+
+* Imbe_InsnFence
+
+A new IRJumpKind:
+
+* Ijk_SigSYS
+
+
+Limitations
+~~~~~~~~~~~
+
+* Only support basic integer instructions and floating-point instructions.
+* Only support fallback LLSC implementation.
+
+
+Reading Material
+~~~~~~~~~~~~~~~~
+
+* LoongArch Reference Manual
+  https://loongson.github.io/LoongArch-Documentation/LoongArch-Vol1-EN.html
+* LoongArch ELF ABI specification:
+  https://loongson.github.io/LoongArch-Documentation/LoongArch-ELF-ABI-EN.html
+* LoongArch Toolchain Conventions:
+  https://loongson.github.io/LoongArch-Documentation/LoongArch-toolchain-conventions-EN.html
+
