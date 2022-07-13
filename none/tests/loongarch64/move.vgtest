@@ -1,0 +1,3 @@
+prereq: ../../../tests/loongarch64_features fpu
+prog: move
+vgopts: -q

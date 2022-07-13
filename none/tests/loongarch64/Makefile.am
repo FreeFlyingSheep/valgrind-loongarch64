@@ -6,19 +6,25 @@ dist_noinst_SCRIPTS = filter_stderr
 EXTRA_DIST = \
 	atomic.stdout.exp atomic.stderr.exp atomic.vgtest \
 	branch.stdout.exp branch.stderr.exp branch.vgtest \
+	fault.stdout.exp fault.stderr.exp fault.vgtest \
+	fault_fp.stdout.exp fault_fp.stderr.exp fault_fp.vgtest \
 	float.stdout.exp float.stderr.exp float.vgtest \
 	integer.stdout.exp integer.stderr.exp integer.vgtest \
 	llsc.stdout.exp llsc.stderr.exp llsc.vgtest \
-	memory.stdout.exp memory.stderr.exp memory.vgtest
+	memory.stdout.exp memory.stderr.exp memory.vgtest \
+	move.stdout.exp move.stderr.exp move.vgtest
 
 check_PROGRAMS = \
 	allexec \
 	atomic \
 	branch \
+	fault \
+	fault_fp \
 	float \
 	integer \
 	llsc \
-	memory
+	memory \
+	move
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@
