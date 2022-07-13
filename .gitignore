@@ -2055,6 +2055,7 @@
 /none/tests/loongarch64/branch
 /none/tests/loongarch64/float
 /none/tests/loongarch64/integer
+/none/tests/loongarch64/llsc
 /none/tests/loongarch64/memory
 
 # /none/tests/scripts/

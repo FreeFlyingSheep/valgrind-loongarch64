@@ -8,6 +8,7 @@ EXTRA_DIST = \
 	branch.stdout.exp branch.stderr.exp branch.vgtest \
 	float.stdout.exp float.stderr.exp float.vgtest \
 	integer.stdout.exp integer.stderr.exp integer.vgtest \
+	llsc.stdout.exp llsc.stderr.exp llsc.vgtest \
 	memory.stdout.exp memory.stderr.exp memory.vgtest
 
 check_PROGRAMS = \
@@ -16,6 +17,7 @@ check_PROGRAMS = \
 	branch \
 	float \
 	integer \
+	llsc \
 	memory
 
 AM_CFLAGS    += @FLAG_M64@
