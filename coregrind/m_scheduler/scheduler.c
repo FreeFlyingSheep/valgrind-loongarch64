@@ -271,6 +271,7 @@ const HChar* name_of_sched_event ( UInt event )
       case VEX_TRC_JMP_SIGBUS:         return "SIGBUS";
       case VEX_TRC_JMP_SIGFPE_INTOVF:
       case VEX_TRC_JMP_SIGFPE_INTDIV:  return "SIGFPE";
+      case VEX_TRC_JMP_SIGSYS:         return "SIGSYS";
       case VEX_TRC_JMP_EMWARN:         return "EMWARN";
       case VEX_TRC_JMP_EMFAIL:         return "EMFAIL";
       case VEX_TRC_JMP_CLIENTREQ:      return "CLIENTREQ";
@@ -1655,6 +1656,10 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 
       case VEX_TRC_JMP_SIGFPE_INTOVF:
          VG_(synth_sigfpe)(tid, VKI_FPE_INTOVF);
+         break;
+
+      case VEX_TRC_JMP_SIGSYS:
+         VG_(synth_sigsys)(tid);
          break;
 
       case VEX_TRC_JMP_NODECODE: {

@@ -2319,6 +2319,30 @@ void VG_(synth_sigfpe)(ThreadId tid, UInt code)
 #endif
 }
 
+// Synthesise a SIGSYS.
+void VG_(synth_sigsys)(ThreadId tid)
+{
+// Only tested on loongarch64-linux.
+#if !defined(VGP_loongarch64_linux)
+   vg_assert(0);
+#else
+   vki_siginfo_t info;
+
+   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
+
+   VG_(memset)(&info, 0, sizeof(info));
+   info.si_signo = VKI_SIGSYS;
+   info.si_code  = VKI_SI_KERNEL;
+
+   if (VG_(gdbserver_report_signal) (&info, tid)) {
+      resume_scheduler(tid);
+      deliver_signal(tid, &info, NULL);
+   }
+   else
+      resume_scheduler(tid);
+#endif
+}
+
 /* Make a signal pending for a thread, for later delivery.
    VG_(poll_signals) will arrange for it to be delivered at the right
    time. 

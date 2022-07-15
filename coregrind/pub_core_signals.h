@@ -77,6 +77,7 @@ extern void VG_(synth_sigill)       (ThreadId tid, Addr addr);
 extern void VG_(synth_sigtrap)      (ThreadId tid);
 extern void VG_(synth_sigbus)       (ThreadId tid);
 extern void VG_(synth_sigfpe)       (ThreadId tid, UInt code);
+extern void VG_(synth_sigsys)       (ThreadId tid);
 
 /* Extend the stack to cover addr, if possible */
 extern Bool VG_(extend_stack)(ThreadId tid, Addr addr);

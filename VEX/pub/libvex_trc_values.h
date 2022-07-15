@@ -57,6 +57,7 @@
                                       continuing */
 #define VEX_TRC_JMP_SIGBUS     93  /* deliver SIGBUS before continuing */
 #define VEX_TRC_JMP_SIGFPE    105  /* deliver SIGFPE before continuing */
+#define VEX_TRC_JMP_SIGSYS    115  /* deliver SIGSYS before continuing */
 
 #define VEX_TRC_JMP_SIGFPE_INTDIV     97  /* deliver SIGFPE (integer divide
                                              by zero) before continuing */
