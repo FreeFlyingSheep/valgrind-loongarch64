@@ -6,6 +6,7 @@ dist_noinst_SCRIPTS = filter_stderr
 EXTRA_DIST = \
 	atomic.stdout.exp atomic.stderr.exp atomic.vgtest \
 	branch.stdout.exp branch.stderr.exp branch.vgtest \
+	cpucfg.stdout.exp cpucfg.stderr.exp cpucfg.vgtest \
 	fault.stdout.exp fault.stderr.exp fault.vgtest \
 	fault_fp.stdout.exp fault_fp.stderr.exp fault_fp.vgtest \
 	float.stdout.exp float.stderr.exp float.vgtest \
@@ -18,6 +19,7 @@ check_PROGRAMS = \
 	allexec \
 	atomic \
 	branch \
+	cpucfg \
 	fault \
 	fault_fp \
 	float \

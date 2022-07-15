@@ -2053,13 +2053,14 @@
 /none/tests/loongarch64/allexec
 /none/tests/loongarch64/atomic
 /none/tests/loongarch64/branch
+/none/tests/loongarch64/cpucfg
 /none/tests/loongarch64/fault
 /none/tests/loongarch64/fault_fp
 /none/tests/loongarch64/float
 /none/tests/loongarch64/integer
 /none/tests/loongarch64/llsc
 /none/tests/loongarch64/memory
-none/tests/loongarch64/move
+/none/tests/loongarch64/move
 
 # /none/tests/scripts/
 /none/tests/scripts/*.dSYM
