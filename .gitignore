@@ -2062,6 +2062,7 @@
 /none/tests/loongarch64/memory
 /none/tests/loongarch64/move
 /none/tests/loongarch64/pc
+/none/tests/loongarch64/special
 
 # /none/tests/scripts/
 /none/tests/scripts/*.dSYM
