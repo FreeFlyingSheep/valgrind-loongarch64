@@ -179,15 +179,16 @@ typedef struct {
    unsigned    immediate_type;
 
    // Indicate whether IROp can be tested on a particular architecture
-   unsigned    s390x  : 1;
-   unsigned    amd64  : 1;
-   unsigned    ppc32  : 1;
-   unsigned    ppc64  : 1;
-   unsigned    arm    : 1;
-   unsigned    arm64  : 1;
-   unsigned    x86    : 1;
-   unsigned    mips32 : 1;
-   unsigned    mips64 : 1;
+   unsigned    s390x      : 1;
+   unsigned    amd64      : 1;
+   unsigned    ppc32      : 1;
+   unsigned    ppc64      : 1;
+   unsigned    arm        : 1;
+   unsigned    arm64      : 1;
+   unsigned    x86        : 1;
+   unsigned    mips32     : 1;
+   unsigned    mips64     : 1;
+   unsigned    loongarch64: 1;
 } irop_t;
 
 
