@@ -60,6 +60,7 @@ typedef
       VexArchMIPS32,
       VexArchMIPS64,
       VexArchNANOMIPS,
+      VexArchLOONGARCH64,
    }
    VexArch;
 
@@ -298,6 +299,22 @@ typedef
 #define VEX_MIPS_PROC_MSA(x) ((VEX_MIPS_COMP_ID(x) == VEX_PRID_COMP_MIPS) && \
                               (VEX_MIPS_PROC_ID(x) == VEX_PRID_IMP_P5600) && \
                               (VEX_MIPS_HOST_FP_MODE(x)))
+
+/* LoongArch baseline capability */
+#define VEX_HWCAPS_LOONGARCH_CPUCFG    (1 << 0)   /* CPU has CPUCFG */
+#define VEX_HWCAPS_LOONGARCH_LAM       (1 << 1)   /* CPU has Atomic instructions */
+#define VEX_HWCAPS_LOONGARCH_UAL       (1 << 2)   /* CPU has Unaligned Access support */
+#define VEX_HWCAPS_LOONGARCH_FP        (1 << 3)   /* CPU has FPU */
+#define VEX_HWCAPS_LOONGARCH_LSX       (1 << 4)   /* CPU has 128-bit SIMD instructions */
+#define VEX_HWCAPS_LOONGARCH_LASX      (1 << 5)   /* CPU has 256-bit SIMD instructions */
+#define VEX_HWCAPS_LOONGARCH_COMPLEX   (1 << 6)   /* CPU has Complex instructions */
+#define VEX_HWCAPS_LOONGARCH_CRYPTO    (1 << 7)   /* CPU has Crypto instructions */
+#define VEX_HWCAPS_LOONGARCH_LVZP      (1 << 8)   /* CPU has Virtualization extension */
+#define VEX_HWCAPS_LOONGARCH_X86BT     (1 << 9)   /* CPU has X86 Binary Translation */
+#define VEX_HWCAPS_LOONGARCH_ARMBT     (1 << 10)  /* CPU has ARM Binary Translation */
+#define VEX_HWCAPS_LOONGARCH_MIPSBT    (1 << 11)  /* CPU has MIPS Binary Translation */
+#define VEX_HWCAPS_LOONGARCH_ISA_32BIT (1 << 30)  /* 32-bit ISA */
+#define VEX_HWCAPS_LOONGARCH_ISA_64BIT (1 << 31)  /* 64-bit ISA */
 
 /* These return statically allocated strings. */
 
@@ -1024,6 +1041,10 @@ extern void LibVEX_InitIRI ( const IRICB * );
    arm64
    ~~~~~
    r21 is GSP.
+
+   loongarch64
+   ~~~~~
+   r31 is GSP.
 
    ALL GUEST ARCHITECTURES
    ~~~~~~~~~~~~~~~~~~~~~~~
