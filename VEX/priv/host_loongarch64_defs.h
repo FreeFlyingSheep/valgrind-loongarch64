@@ -356,12 +356,16 @@ typedef enum {
 
 /* Tags for extra operations, we only use them when emiting code directly */
 typedef enum {
+   LAextra_MOVGR2CF = 0x0114d800,
    LAextra_MOVCF2GR = 0x0114dc00,
    LAextra_SLT      = 0x00120000,
    LAextra_SLTU     = 0x00128000,
+   LAextra_MASKEQZ  = 0x00130000,
+   LAextra_MASKNEZ  = 0x00138000,
    LAextra_SLTI     = 0x02000000,
    LAextra_SLTUI    = 0x02400000,
    LAextra_LU52I_D  = 0x03000000,
+   LAextra_FSEL     = 0x0d000000,
    LAextra_LU12I_W  = 0x14000000,
    LAextra_LU32I_D  = 0x16000000,
    LAextra_JIRL     = 0x4c000000,
@@ -396,7 +400,8 @@ typedef enum {
 
    /* Pseudo-insn */
    LAin_Cas,        /* compare and swap */
-   LAin_Cmp         /* word compare */
+   LAin_Cmp,        /* word compare */
+   LAin_CMove       /* condition move */
 } LOONGARCH64InstrTag;
 
 typedef struct {
@@ -489,6 +494,13 @@ typedef struct {
          HReg                 src1;
          HReg                 src2;
       } Cmp;
+      struct {
+         HReg                 cond;
+         HReg                 r0;
+         HReg                 r1;
+         HReg                 dst;
+         Bool                 isInt;
+      } CMove;
    } LAin;
 } LOONGARCH64Instr;
 
@@ -535,6 +547,8 @@ extern LOONGARCH64Instr* LOONGARCH64Instr_Cas       ( HReg old, HReg addr,
 extern LOONGARCH64Instr* LOONGARCH64Instr_Cmp       ( LOONGARCH64CondCode cond,
                                                       HReg src2, HReg src1,
                                                       HReg dst );
+extern LOONGARCH64Instr* LOONGARCH64Instr_CMove     ( HReg cond, HReg r0, HReg r1,
+                                                      HReg dst, Bool isInt );
 
 extern void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 );
 

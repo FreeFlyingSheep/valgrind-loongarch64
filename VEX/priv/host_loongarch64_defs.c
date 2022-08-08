@@ -944,6 +944,19 @@ LOONGARCH64Instr* LOONGARCH64Instr_Cmp ( LOONGARCH64CondCode cond,
    return i;
 }
 
+LOONGARCH64Instr* LOONGARCH64Instr_CMove ( HReg cond, HReg r0, HReg r1,
+                                           HReg dst, Bool isInt )
+{
+   LOONGARCH64Instr* i  = LibVEX_Alloc_inline(sizeof(LOONGARCH64Instr));
+   i->tag               = LAin_CMove;
+   i->LAin.CMove.cond   = cond;
+   i->LAin.CMove.r0     = r0;
+   i->LAin.CMove.r1     = r1;
+   i->LAin.CMove.dst    = dst;
+   i->LAin.CMove.isInt  = isInt;
+   return i;
+}
+
 
 /* -------- Pretty Print instructions ------------- */
 
@@ -1100,6 +1113,37 @@ static inline void ppCmp ( LOONGARCH64CondCode cond, HReg src2,
    vex_printf(")");
 }
 
+static inline void ppCMove ( HReg cond, HReg r0, HReg r1,
+                             HReg dst, Bool isInt )
+{
+   if (isInt) {
+      vex_printf("masknez $t0, ");
+      ppHRegLOONGARCH64(r0);
+      vex_printf(", ");
+      ppHRegLOONGARCH64(cond);
+      vex_printf("; maskeqz ");
+      ppHRegLOONGARCH64(dst);
+      vex_printf(", ");
+      ppHRegLOONGARCH64(r1);
+      vex_printf(", ");
+      ppHRegLOONGARCH64(cond);
+      vex_printf("; or ");
+      ppHRegLOONGARCH64(dst);
+      vex_printf(", $t0, ");
+      ppHRegLOONGARCH64(dst);
+   } else {
+      vex_printf("movgr2cf ");
+      ppHRegLOONGARCH64(cond);
+      vex_printf(", $fcc0; fsel ");
+      ppHRegLOONGARCH64(dst);
+      vex_printf(", ");
+      ppHRegLOONGARCH64(r0);
+      vex_printf(", ");
+      ppHRegLOONGARCH64(r1);
+      vex_printf(", $fcc0");
+   }
+}
+
 void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
 {
    vassert(mode64 == True);
@@ -1161,6 +1205,11 @@ void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
       case LAin_Cmp:
          ppCmp(i->LAin.Cmp.cond, i->LAin.Cmp.src2,
                i->LAin.Cmp.src1, i->LAin.Cmp.dst);
+         break;
+      case LAin_CMove:
+         ppCMove(i->LAin.CMove.cond, i->LAin.CMove.r0,
+                 i->LAin.CMove.r1, i->LAin.CMove.dst,
+                 i->LAin.CMove.isInt);
          break;
       default:
          vpanic("ppLOONGARCH64Instr");
@@ -1250,6 +1299,12 @@ void getRegUsage_LOONGARCH64Instr ( HRegUsage* u, const LOONGARCH64Instr* i,
          addHRegUse(u, HRmRead, i->LAin.Cmp.src1);
          addHRegUse(u, HRmWrite, i->LAin.Cmp.dst);
          break;
+      case LAin_CMove:
+         addHRegUse(u, HRmRead, i->LAin.CMove.cond);
+         addHRegUse(u, HRmRead, i->LAin.CMove.r0);
+         addHRegUse(u, HRmRead, i->LAin.CMove.r1);
+         addHRegUse(u, HRmWrite, i->LAin.CMove.dst);
+         break;
       default:
          ppLOONGARCH64Instr(i, mode64);
          vpanic("getRegUsage_LOONGARCH64Instr");
@@ -1331,6 +1386,12 @@ void mapRegs_LOONGARCH64Instr ( HRegRemap* m, LOONGARCH64Instr* i,
          mapReg(m, &i->LAin.Cmp.src2);
          mapReg(m, &i->LAin.Cmp.src1);
          mapReg(m, &i->LAin.Cmp.dst);
+         break;
+      case LAin_CMove:
+         mapReg(m, &i->LAin.CMove.cond);
+         mapReg(m, &i->LAin.CMove.r0);
+         mapReg(m, &i->LAin.CMove.r1);
+         mapReg(m, &i->LAin.CMove.dst);
          break;
       default:
          ppLOONGARCH64Instr(i, mode64);
@@ -2069,6 +2130,32 @@ static inline UInt* mkCmp ( UInt* p, LOONGARCH64CondCode cond,
    }
 }
 
+static inline UInt* mkCMove ( UInt* p, HReg cond, HReg r0,
+                              HReg r1, HReg dst, Bool isInt )
+{
+   if (isInt) {
+      /*
+         masknez $t0, r0, cond
+         maskeqz dst, r1, cond
+         or      dst, $t0, dst
+       */
+      UInt c = iregEnc(cond);
+      UInt d = iregEnc(dst);
+      *p++ = emit_op_rk_rj_rd(LAextra_MASKNEZ, c, iregEnc(r0), 12);
+      *p++ = emit_op_rk_rj_rd(LAextra_MASKEQZ, c, iregEnc(r1), d);
+      *p++ = emit_op_rk_rj_rd(LAbin_OR, d, 12, d);
+   } else {
+      /*
+         movgr2cf $fcc0, cond
+         fsel     dst, r0, r1, $fcc0
+       */
+      *p++ = emit_op_rj_cd(LAextra_MOVGR2CF, iregEnc(cond), 0);
+      *p++ = emit_op_ca_fk_fj_fd(LAextra_FSEL, 0, fregEnc(r1),
+                                 fregEnc(r0), fregEnc(dst));
+   }
+   return p;
+}
+
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code.  If the emitted
@@ -2153,6 +2240,11 @@ Int emit_LOONGARCH64Instr ( /*MB_MOD*/Bool* is_profInc,
       case LAin_Cmp:
          p = mkCmp(p, i->LAin.Cmp.cond, i->LAin.Cmp.src2,
                    i->LAin.Cmp.src1, i->LAin.Cmp.dst);
+         break;
+      case LAin_CMove:
+         p = mkCMove(p, i->LAin.CMove.cond, i->LAin.CMove.r0,
+                     i->LAin.CMove.r1, i->LAin.CMove.dst,
+                     i->LAin.CMove.isInt);
          break;
       default:
          p = NULL;
