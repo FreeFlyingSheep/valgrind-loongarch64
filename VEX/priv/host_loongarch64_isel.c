@@ -1761,6 +1761,46 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       /* --------- QUATERNARY OP --------- */
       case Iex_Qop: {
          switch (e->Iex.Qop.details->op) {
+            case Iop_MAddF32: {
+               HReg  dst = newVRegF(env);
+               HReg src1 = iselFltExpr(env, e->Iex.Qop.details->arg2);
+               HReg src2 = iselFltExpr(env, e->Iex.Qop.details->arg3);
+               HReg src3 = iselFltExpr(env, e->Iex.Qop.details->arg4);
+               set_rounding_mode(env, e->Iex.Qop.details->arg1);
+               addInstr(env, LOONGARCH64Instr_FpTrinary(LAfpbin_FMADD_S, src3, src2, src1, dst));
+               set_rounding_mode_default(env);
+               return dst;
+            }
+            case Iop_MAddF64: {
+               HReg  dst = newVRegF(env);
+               HReg src1 = iselFltExpr(env, e->Iex.Qop.details->arg2);
+               HReg src2 = iselFltExpr(env, e->Iex.Qop.details->arg3);
+               HReg src3 = iselFltExpr(env, e->Iex.Qop.details->arg4);
+               set_rounding_mode(env, e->Iex.Qop.details->arg1);
+               addInstr(env, LOONGARCH64Instr_FpTrinary(LAfpbin_FMADD_D, src3, src2, src1, dst));
+               set_rounding_mode_default(env);
+               return dst;
+            }
+            case Iop_MSubF32: {
+               HReg  dst = newVRegF(env);
+               HReg src1 = iselFltExpr(env, e->Iex.Qop.details->arg2);
+               HReg src2 = iselFltExpr(env, e->Iex.Qop.details->arg3);
+               HReg src3 = iselFltExpr(env, e->Iex.Qop.details->arg4);
+               set_rounding_mode(env, e->Iex.Qop.details->arg1);
+               addInstr(env, LOONGARCH64Instr_FpTrinary(LAfpbin_FMSUB_S, src3, src2, src1, dst));
+               set_rounding_mode_default(env);
+               return dst;
+            }
+            case Iop_MSubF64: {
+               HReg  dst = newVRegF(env);
+               HReg src1 = iselFltExpr(env, e->Iex.Qop.details->arg2);
+               HReg src2 = iselFltExpr(env, e->Iex.Qop.details->arg3);
+               HReg src3 = iselFltExpr(env, e->Iex.Qop.details->arg4);
+               set_rounding_mode(env, e->Iex.Qop.details->arg1);
+               addInstr(env, LOONGARCH64Instr_FpTrinary(LAfpbin_FMSUB_D, src3, src2, src1, dst));
+               set_rounding_mode_default(env);
+               return dst;
+            }
             default:
                goto irreducible;
          }
