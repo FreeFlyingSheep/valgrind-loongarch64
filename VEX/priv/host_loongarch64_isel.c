@@ -1477,6 +1477,55 @@ static void iselInt128Expr_wrk (HReg* hi, HReg* lo, ISelEnv* env, IRExpr* e)
    /* --------- BINARY OP --------- */
    if (e->tag == Iex_Binop) {
       switch (e->Iex.Binop.op) {
+         case Iop_64HLto128: {
+            *hi = iselIntExpr_R(env, e->Iex.Binop.arg1);
+            *lo = iselIntExpr_R(env, e->Iex.Binop.arg2);
+            return;
+         }
+         case Iop_DivModS64to64: {
+            HReg           src1 = iselIntExpr_R(env, e->Iex.Binop.arg1);
+            LOONGARCH64RI* src2 = iselIntExpr_RI(env, e->Iex.Binop.arg2, 0, False);
+            HReg          dstLo = newVRegI(env);
+            HReg          dstHi = newVRegI(env);
+            addInstr(env, LOONGARCH64Instr_Binary(LAbin_DIV_D, src2, src1, dstLo));
+            addInstr(env, LOONGARCH64Instr_Binary(LAbin_MOD_D, src2, src1, dstHi));
+            *hi = dstHi;
+            *lo = dstLo;
+            return;
+         }
+         case Iop_DivModU64to64: {
+            HReg           src1 = iselIntExpr_R(env, e->Iex.Binop.arg1);
+            LOONGARCH64RI* src2 = iselIntExpr_RI(env, e->Iex.Binop.arg2, 0, False);
+            HReg          dstLo = newVRegI(env);
+            HReg          dstHi = newVRegI(env);
+            addInstr(env, LOONGARCH64Instr_Binary(LAbin_DIV_DU, src2, src1, dstLo));
+            addInstr(env, LOONGARCH64Instr_Binary(LAbin_MOD_DU, src2, src1, dstHi));
+            *hi = dstHi;
+            *lo = dstLo;
+            return;
+         }
+         case Iop_MullS64: {
+            HReg           src1 = iselIntExpr_R(env, e->Iex.Binop.arg1);
+            LOONGARCH64RI* src2 = iselIntExpr_RI(env, e->Iex.Binop.arg2, 0, False);
+            HReg          dstLo = newVRegI(env);
+            HReg          dstHi = newVRegI(env);
+            addInstr(env, LOONGARCH64Instr_Binary(LAbin_MUL_D, src2, src1, dstLo));
+            addInstr(env, LOONGARCH64Instr_Binary(LAbin_MULH_D, src2, src1, dstHi));
+            *hi = dstHi;
+            *lo = dstLo;
+            return;
+         }
+         case Iop_MullU64: {
+            HReg           src1 = iselIntExpr_R(env, e->Iex.Binop.arg1);
+            LOONGARCH64RI* src2 = iselIntExpr_RI(env, e->Iex.Binop.arg2, 0, False);
+            HReg          dstLo = newVRegI(env);
+            HReg          dstHi = newVRegI(env);
+            addInstr(env, LOONGARCH64Instr_Binary(LAbin_MUL_D, src2, src1, dstLo));
+            addInstr(env, LOONGARCH64Instr_Binary(LAbin_MULH_DU, src2, src1, dstHi));
+            *hi = dstHi;
+            *lo = dstLo;
+            return;
+         }
          default:
             goto irreducible;
       }
