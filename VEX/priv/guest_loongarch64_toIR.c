@@ -1568,196 +1568,525 @@ static Bool gen_ext_w_h ( DisResult* dres, UInt insn,
                           const VexArchInfo* archinfo,
                           const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("ext.w.h %s, %s\n", nameIReg(rd), nameIReg(rj));
+
+   putIReg(rd, extendS(Ity_I16, getIReg16(rj)));
+
+   return True;
 }
 
 static Bool gen_ext_w_b ( DisResult* dres, UInt insn,
                           const VexArchInfo* archinfo,
                           const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("ext.w.b %s, %s\n", nameIReg(rd), nameIReg(rj));
+
+   putIReg(rd, extendS(Ity_I8, getIReg8(rj)));
+
+   return True;
 }
 
 static Bool gen_clo_w ( DisResult* dres, UInt insn,
                         const VexArchInfo* archinfo,
                         const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("clo.w %s, %s\n", nameIReg(rd), nameIReg(rj));
+
+   IRExpr* not = unop(Iop_Not32, getIReg32(rj));
+   IRExpr* clz = unop(Iop_Clz32, not);
+   putIReg(rd, extendU(Ity_I32, clz));
+
+   return True;
 }
 
 static Bool gen_clz_w ( DisResult* dres, UInt insn,
                         const VexArchInfo* archinfo,
                         const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("clz.w %s, %s\n", nameIReg(rd), nameIReg(rj));
+
+   IRExpr* clz = unop(Iop_Clz32, getIReg32(rj));
+   putIReg(rd, extendU(Ity_I32, clz));
+
+   return True;
 }
 
 static Bool gen_cto_w ( DisResult* dres, UInt insn,
                         const VexArchInfo* archinfo,
                         const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("cto.w %s, %s\n", nameIReg(rd), nameIReg(rj));
+
+   IRExpr* not = unop(Iop_Not32, getIReg32(rj));
+   IRExpr* clz = unop(Iop_Ctz32, not);
+   putIReg(rd, extendU(Ity_I32, clz));
+
+   return True;
 }
 
 static Bool gen_ctz_w ( DisResult* dres, UInt insn,
                         const VexArchInfo* archinfo,
                         const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("ctz.w %s, %s\n", nameIReg(rd), nameIReg(rj));
+
+   IRExpr* clz = unop(Iop_Ctz32, getIReg32(rj));
+   putIReg(rd, extendU(Ity_I32, clz));
+
+   return True;
 }
 
 static Bool gen_clo_d ( DisResult* dres, UInt insn,
                         const VexArchInfo* archinfo,
                         const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("clo.d %s, %s\n", nameIReg(rd), nameIReg(rj));
+
+   IRExpr* not = unop(Iop_Not64, getIReg64(rj));
+   putIReg(rd, unop(Iop_Clz64, not));
+
+   return True;
 }
 
 static Bool gen_clz_d ( DisResult* dres, UInt insn,
                         const VexArchInfo* archinfo,
                         const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("clz.d %s, %s\n", nameIReg(rd), nameIReg(rj));
+
+   putIReg(rd, unop(Iop_Clz64, getIReg64(rj)));
+
+   return True;
 }
 
 static Bool gen_cto_d ( DisResult* dres, UInt insn,
                         const VexArchInfo* archinfo,
                         const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("cto.d %s, %s\n", nameIReg(rd), nameIReg(rj));
+
+   IRExpr* not = unop(Iop_Not64, getIReg64(rj));
+   putIReg(rd, unop(Iop_Ctz64, not));
+
+   return True;
 }
 
 static Bool gen_ctz_d ( DisResult* dres, UInt insn,
                         const VexArchInfo* archinfo,
                         const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("ctz.d %s, %s\n", nameIReg(rd), nameIReg(rj));
+
+   putIReg(rd, unop(Iop_Ctz64, getIReg64(rj)));
+
+   return True;
 }
 
 static Bool gen_revb_2h ( DisResult* dres, UInt insn,
                           const VexArchInfo* archinfo,
                           const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("revb.2h %s, %s\n", nameIReg(rd), nameIReg(rj));
+
+   IRExpr** arg = mkIRExprVec_1(getIReg64(rj));
+   IRExpr* call = mkIRExprCCall(Ity_I64, 0/*regparms*/,
+                                "loongarch64_calculate_revb_2h",
+                                &loongarch64_calculate_revb_2h,
+                                arg);
+   putIReg(rd, call);
+
+   return True;
 }
 
 static Bool gen_revb_4h ( DisResult* dres, UInt insn,
                           const VexArchInfo* archinfo,
                           const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("revb.4h %s, %s\n", nameIReg(rd), nameIReg(rj));
+
+   IRExpr** arg = mkIRExprVec_1(getIReg64(rj));
+   IRExpr* call = mkIRExprCCall(Ity_I64, 0/*regparms*/,
+                                "loongarch64_calculate_revb_4h",
+                                &loongarch64_calculate_revb_4h,
+                                arg);
+   putIReg(rd, call);
+
+   return True;
 }
 
 static Bool gen_revb_2w ( DisResult* dres, UInt insn,
                           const VexArchInfo* archinfo,
                           const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("revb.2w %s, %s\n", nameIReg(rd), nameIReg(rj));
+
+   IRExpr** arg = mkIRExprVec_1(getIReg64(rj));
+   IRExpr* call = mkIRExprCCall(Ity_I64, 0/*regparms*/,
+                                "loongarch64_calculate_revb_2w",
+                                &loongarch64_calculate_revb_2w,
+                                arg);
+   putIReg(rd, call);
+
+   return True;
 }
 
 static Bool gen_revb_d ( DisResult* dres, UInt insn,
                          const VexArchInfo* archinfo,
                          const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("revb.d %s, %s\n", nameIReg(rd), nameIReg(rj));
+
+   IRExpr** arg = mkIRExprVec_1(getIReg64(rj));
+   IRExpr* call = mkIRExprCCall(Ity_I64, 0/*regparms*/,
+                                "loongarch64_calculate_revb_d",
+                                &loongarch64_calculate_revb_d,
+                                arg);
+   putIReg(rd, call);
+
+   return True;
 }
 
 static Bool gen_revh_2w ( DisResult* dres, UInt insn,
                           const VexArchInfo* archinfo,
                           const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("revh.2w %s, %s\n", nameIReg(rd), nameIReg(rj));
+
+   IRExpr** arg = mkIRExprVec_1(getIReg64(rj));
+   IRExpr* call = mkIRExprCCall(Ity_I64, 0/*regparms*/,
+                                "loongarch64_calculate_revh_2w",
+                                &loongarch64_calculate_revh_2w,
+                                arg);
+   putIReg(rd, call);
+
+   return True;
 }
 
 static Bool gen_revh_d ( DisResult* dres, UInt insn,
                          const VexArchInfo* archinfo,
                          const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("revh.d %s, %s\n", nameIReg(rd), nameIReg(rj));
+
+   IRExpr** arg = mkIRExprVec_1(getIReg64(rj));
+   IRExpr* call = mkIRExprCCall(Ity_I64, 0/*regparms*/,
+                                "loongarch64_calculate_revh_d",
+                                &loongarch64_calculate_revh_d,
+                                arg);
+   putIReg(rd, call);
+
+   return True;
 }
 
 static Bool gen_bitrev_4b ( DisResult* dres, UInt insn,
                             const VexArchInfo* archinfo,
                             const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("bitrev.4b %s, %s\n", nameIReg(rd), nameIReg(rj));
+
+   IRExpr** arg = mkIRExprVec_1(getIReg64(rj));
+   IRExpr* call = mkIRExprCCall(Ity_I64, 0/*regparms*/,
+                                "loongarch64_calculate_bitrev_4b",
+                                &loongarch64_calculate_bitrev_4b,
+                                arg);
+   putIReg(rd, call);
+
+   return True;
 }
 
 static Bool gen_bitrev_8b ( DisResult* dres, UInt insn,
                             const VexArchInfo* archinfo,
                             const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("bitrev.8b %s, %s\n", nameIReg(rd), nameIReg(rj));
+
+   IRExpr** arg = mkIRExprVec_1(getIReg64(rj));
+   IRExpr* call = mkIRExprCCall(Ity_I64, 0/*regparms*/,
+                                "loongarch64_calculate_bitrev_8b",
+                                &loongarch64_calculate_bitrev_8b,
+                                arg);
+   putIReg(rd, call);
+
+   return True;
 }
 
 static Bool gen_bitrev_w ( DisResult* dres, UInt insn,
                            const VexArchInfo* archinfo,
                            const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("bitrev.w %s, %s\n", nameIReg(rd), nameIReg(rj));
+
+   IRExpr** arg = mkIRExprVec_1(getIReg64(rj));
+   IRExpr* call = mkIRExprCCall(Ity_I64, 0/*regparms*/,
+                                "loongarch64_calculate_bitrev_w",
+                                &loongarch64_calculate_bitrev_w,
+                                arg);
+   putIReg(rd, call);
+
+   return True;
 }
 
 static Bool gen_bitrev_d ( DisResult* dres, UInt insn,
                            const VexArchInfo* archinfo,
                            const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("bitrev.d %s, %s\n", nameIReg(rd), nameIReg(rj));
+
+   IRExpr** arg = mkIRExprVec_1(getIReg64(rj));
+   IRExpr* call = mkIRExprCCall(Ity_I64, 0/*regparms*/,
+                                "loongarch64_calculate_bitrev_d",
+                                &loongarch64_calculate_bitrev_d,
+                                arg);
+   putIReg(rd, call);
+
+   return True;
 }
 
 static Bool gen_bytepick_w ( DisResult* dres, UInt insn,
                              const VexArchInfo* archinfo,
                              const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt sa2 = get_sa2(insn);
+   UInt  rk = get_rk(insn);
+   UInt  rj = get_rj(insn);
+   UInt  rd = get_rd(insn);
+
+   DIP("bytepick.w %s, %s, %s, %u\n", nameIReg(rd), nameIReg(rj),
+                                      nameIReg(rk), sa2);
+
+   UInt shift = 8 * (4 - sa2);
+   IRExpr* shl = binop(Iop_Shl32, getIReg32(rk), mkU8(32 - shift));
+   if (32 - shift == 32)
+      shl = mkU32(0);
+   IRExpr* shr = binop(Iop_Shr32, getIReg32(rj), mkU8(shift));
+   if (shift == 32)
+      shr = mkU32(0);
+   IRExpr* or = binop(Iop_Or32, shl, shr);
+   putIReg(rd, extendS(Ity_I32, or));
+
+   return True;
 }
 
 static Bool gen_bytepick_d ( DisResult* dres, UInt insn,
                              const VexArchInfo* archinfo,
                              const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt sa3 = get_sa3(insn);
+   UInt  rk = get_rk(insn);
+   UInt  rj = get_rj(insn);
+   UInt  rd = get_rd(insn);
+
+   DIP("bytepick.d %s, %s, %s, %u\n", nameIReg(rd), nameIReg(rj),
+                                      nameIReg(rk), sa3);
+
+   UInt shift = 8 * (8 - sa3);
+   IRExpr* shl = binop(Iop_Shl64, getIReg64(rk), mkU8(64 - shift));
+   if (64 - shift == 64)
+      shl = mkU64(0);
+   IRExpr* shr = binop(Iop_Shr64, getIReg64(rj), mkU8(shift));
+   if (shift == 64)
+      shr = mkU64(0);
+   putIReg(rd, binop(Iop_Or64, shl, shr));
+
+   return True;
 }
 
 static Bool gen_maskeqz ( DisResult* dres, UInt insn,
                           const VexArchInfo* archinfo,
                           const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rk = get_rk(insn);
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("maskeqz %s, %s, %s\n", nameIReg(rd), nameIReg(rj), nameIReg(rk));
+
+   IRExpr* cond = binop(Iop_CmpNE64, getIReg64(rk), mkU64(0));
+   putIReg(rd, binop(Iop_And64, extendS(Ity_I1, cond), getIReg64(rj)));
+
+   return True;
 }
 
 static Bool gen_masknez ( DisResult* dres, UInt insn,
                           const VexArchInfo* archinfo,
                           const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt rk = get_rk(insn);
+   UInt rj = get_rj(insn);
+   UInt rd = get_rd(insn);
+
+   DIP("masknez %s, %s, %s\n", nameIReg(rd), nameIReg(rj), nameIReg(rk));
+
+   IRExpr* cond = binop(Iop_CmpEQ64, getIReg64(rk), mkU64(0));
+   putIReg(rd, binop(Iop_And64, extendS(Ity_I1, cond), getIReg64(rj)));
+
+   return True;
 }
 
 static Bool gen_bstrins_w ( DisResult* dres, UInt insn,
                             const VexArchInfo* archinfo,
                             const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt msb = get_msbw(insn);
+   UInt lsb = get_lsbw(insn);
+   UInt  rj = get_rj(insn);
+   UInt  rd = get_rd(insn);
+
+   DIP("bstrins.w %s, %s, %u, %u\n", nameIReg(rd), nameIReg(rj), msb, lsb);
+
+   IRTemp tmp = newTemp(Ity_I32);
+   assign(tmp, getIReg32(rd));
+   IRExpr* shl1;
+   if (msb == 31) {
+      shl1 = mkU32(0);
+   } else {
+      IRExpr* shr1 = binop(Iop_Shr32, mkexpr(tmp), mkU8(msb + 1));
+      shl1 = binop(Iop_Shl32, shr1, mkU8(msb + 1));
+   }
+   IRExpr* shl2 = binop(Iop_Shl32, getIReg32(rj), mkU8(31 - msb + lsb));
+   IRExpr* shr2 = binop(Iop_Shr32, shl2, mkU8(31 - msb));
+   IRExpr* shr3;
+   if (lsb == 0) {
+      shr3 = mkU32(0);
+   } else {
+      IRExpr* shl3 = binop(Iop_Shl32, mkexpr(tmp), mkU8(32 - lsb));
+      shr3 = binop(Iop_Shr32, shl3, mkU8(32 - lsb));
+   }
+   IRExpr* or1 = binop(Iop_Or32, shl1, shr2);
+   IRExpr* or2 = binop(Iop_Or32, or1, shr3);
+   putIReg(rd, extendS(Ity_I32, or2));
+
+   return True;
 }
 
 static Bool gen_bstrpick_w ( DisResult* dres, UInt insn,
                              const VexArchInfo* archinfo,
                              const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt msb = get_msbw(insn);
+   UInt lsb = get_lsbw(insn);
+   UInt  rj = get_rj(insn);
+   UInt  rd = get_rd(insn);
+
+   DIP("bstrpick.w %s, %s, %u, %u\n", nameIReg(rd), nameIReg(rj), msb, lsb);
+
+   IRExpr* shl = binop(Iop_Shl32, getIReg32(rj), mkU8(31 - msb));
+   IRExpr* shr = binop(Iop_Shr32, shl, mkU8(31 - msb + lsb));
+   putIReg(rd, extendS(Ity_I32, shr));
+
+   return True;
 }
 
 static Bool gen_bstrins_d ( DisResult* dres, UInt insn,
                             const VexArchInfo* archinfo,
                             const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt msb = get_msbd(insn);
+   UInt lsb = get_lsbd(insn);
+   UInt  rj = get_rj(insn);
+   UInt  rd = get_rd(insn);
+
+   DIP("bstrins.d %s, %s, %u, %u\n", nameIReg(rd), nameIReg(rj), msb, lsb);
+
+   IRTemp tmp = newTemp(Ity_I64);
+   assign(tmp, getIReg64(rd));
+   IRExpr* shl1;
+   if (msb == 63) {
+      shl1 = mkU64(0);
+   } else {
+      IRExpr* shr1 = binop(Iop_Shr64, mkexpr(tmp), mkU8(msb + 1));
+      shl1 = binop(Iop_Shl64, shr1, mkU8(msb + 1));
+   }
+   IRExpr* shl2 = binop(Iop_Shl64, getIReg64(rj), mkU8(63 - msb + lsb));
+   IRExpr* shr2 = binop(Iop_Shr64, shl2, mkU8(63 - msb));
+   IRExpr* shr3;
+   if (lsb == 0) {
+      shr3 = mkU64(0);
+   } else {
+      IRExpr* shl3 = binop(Iop_Shl64, mkexpr(tmp), mkU8(64 - lsb));
+      shr3 = binop(Iop_Shr64, shl3, mkU8(64 - lsb));
+   }
+   IRExpr* or = binop(Iop_Or64, shl1, shr2);
+   putIReg(rd, binop(Iop_Or64, or, shr3));
+
+   return True;
 }
 
 static Bool gen_bstrpick_d ( DisResult* dres, UInt insn,
                              const VexArchInfo* archinfo,
                              const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt msb = get_msbd(insn);
+   UInt lsb = get_lsbd(insn);
+   UInt  rj = get_rj(insn);
+   UInt  rd = get_rd(insn);
+
+   DIP("bstrpick.d %s, %s, %u, %u\n", nameIReg(rd), nameIReg(rj), msb, lsb);
+
+   IRExpr* shl = binop(Iop_Shl64, getIReg64(rj), mkU8(63 - msb));
+   putIReg(rd, binop(Iop_Shr64, shl, mkU8(63 - msb + lsb)));
+
+   return True;
 }
 
 

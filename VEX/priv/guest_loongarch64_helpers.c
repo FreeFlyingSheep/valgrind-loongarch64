@@ -232,6 +232,121 @@ VexGuestLayout loongarch64Guest_layout = {
 };
 
 
+/*-----------------------------------------------------------*/
+/*--- loongarch64 guest helpers                           ---*/
+/*-----------------------------------------------------------*/
+
+static void swap_UChar ( UChar* a, UChar* b )
+{
+   UChar t = *a;
+   *a = *b;
+   *b = t;
+}
+
+ULong loongarch64_calculate_revb_2h ( ULong src )
+{
+   UChar* s = (UChar*)&src;
+   swap_UChar(&s[0], &s[1]);
+   swap_UChar(&s[2], &s[3]);
+   return (ULong)(Long)(Int)src;
+}
+
+ULong loongarch64_calculate_revb_4h ( ULong src )
+{
+   UChar* s = (UChar*)&src;
+   swap_UChar(&s[0], &s[1]);
+   swap_UChar(&s[2], &s[3]);
+   swap_UChar(&s[4], &s[5]);
+   swap_UChar(&s[6], &s[7]);
+   return src;
+}
+
+ULong loongarch64_calculate_revb_2w ( ULong src )
+{
+   UChar* s = (UChar*)&src;
+   swap_UChar(&s[0], &s[3]);
+   swap_UChar(&s[1], &s[2]);
+   swap_UChar(&s[4], &s[7]);
+   swap_UChar(&s[5], &s[6]);
+   return src;
+}
+
+ULong loongarch64_calculate_revb_d ( ULong src )
+{
+   UChar* s = (UChar*)&src;
+   swap_UChar(&s[0], &s[7]);
+   swap_UChar(&s[1], &s[6]);
+   swap_UChar(&s[2], &s[5]);
+   swap_UChar(&s[3], &s[4]);
+   return src;
+}
+
+static void swap_UShort ( UShort* a, UShort* b )
+{
+   UShort t = *a;
+   *a = *b;
+   *b = t;
+}
+
+ULong loongarch64_calculate_revh_2w ( ULong src )
+{
+   UShort* s = (UShort*)&src;
+   swap_UShort(&s[0], &s[1]);
+   swap_UShort(&s[2], &s[3]);
+   return src;
+}
+
+ULong loongarch64_calculate_revh_d ( ULong src )
+{
+   UShort* s = (UShort*)&src;
+   swap_UShort(&s[0], &s[3]);
+   swap_UShort(&s[1], &s[2]);
+   return src;
+}
+
+static ULong bitrev ( ULong src, ULong start, ULong end )
+{
+   int i, j;
+   ULong res = 0;
+   for (i = start, j = 1; i < end; i++, j++)
+      res |= ((src >> i) & 1) << (end - j);
+   return res;
+}
+
+ULong loongarch64_calculate_bitrev_4b ( ULong src )
+{
+   ULong res = bitrev(src, 0, 8);
+   res |= bitrev(src, 8, 16);
+   res |= bitrev(src, 16, 24);
+   res |= bitrev(src, 24, 32);
+   return (ULong)(Long)(Int)res;
+}
+
+ULong loongarch64_calculate_bitrev_8b ( ULong src )
+{
+   ULong res = bitrev(src, 0, 8);
+   res |= bitrev(src, 8, 16);
+   res |= bitrev(src, 16, 24);
+   res |= bitrev(src, 24, 32);
+   res |= bitrev(src, 32, 40);
+   res |= bitrev(src, 40, 48);
+   res |= bitrev(src, 48, 56);
+   res |= bitrev(src, 56, 64);
+   return res;
+}
+
+ULong loongarch64_calculate_bitrev_w ( ULong src )
+{
+   ULong res = bitrev(src, 0, 32);
+   return (ULong)(Long)(Int)res;
+}
+
+ULong loongarch64_calculate_bitrev_d ( ULong src )
+{
+   return bitrev(src, 0, 64);
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- end                         guest_loongarch64_helpers.c ---*/
 /*---------------------------------------------------------------*/
