@@ -1809,6 +1809,96 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       /* --------- TERNARY OP --------- */
       case Iex_Triop: {
          switch (e->Iex.Triop.details->op) {
+            case Iop_AddF32: {
+               HReg  dst = newVRegF(env);
+               HReg src1 = iselFltExpr(env, e->Iex.Triop.details->arg2);
+               HReg src2 = iselFltExpr(env, e->Iex.Triop.details->arg3);
+               set_rounding_mode(env, e->Iex.Triop.details->arg1);
+               addInstr(env, LOONGARCH64Instr_FpBinary(LAfpbin_FADD_S, src2, src1, dst));
+               set_rounding_mode_default(env);
+               return dst;
+            }
+            case Iop_AddF64: {
+               HReg  dst = newVRegF(env);
+               HReg src1 = iselFltExpr(env, e->Iex.Triop.details->arg2);
+               HReg src2 = iselFltExpr(env, e->Iex.Triop.details->arg3);
+               set_rounding_mode(env, e->Iex.Triop.details->arg1);
+               addInstr(env, LOONGARCH64Instr_FpBinary(LAfpbin_FADD_D, src2, src1, dst));
+               set_rounding_mode_default(env);
+               return dst;
+            }
+            case Iop_DivF32: {
+               HReg  dst = newVRegF(env);
+               HReg src1 = iselFltExpr(env, e->Iex.Triop.details->arg2);
+               HReg src2 = iselFltExpr(env, e->Iex.Triop.details->arg3);
+               set_rounding_mode(env, e->Iex.Triop.details->arg1);
+               addInstr(env, LOONGARCH64Instr_FpBinary(LAfpbin_FDIV_S, src2, src1, dst));
+               set_rounding_mode_default(env);
+               return dst;
+            }
+            case Iop_DivF64: {
+               HReg  dst = newVRegF(env);
+               HReg src1 = iselFltExpr(env, e->Iex.Triop.details->arg2);
+               HReg src2 = iselFltExpr(env, e->Iex.Triop.details->arg3);
+               set_rounding_mode(env, e->Iex.Triop.details->arg1);
+               addInstr(env, LOONGARCH64Instr_FpBinary(LAfpbin_FDIV_D, src2, src1, dst));
+               set_rounding_mode_default(env);
+               return dst;
+            }
+            case Iop_MulF32: {
+               HReg  dst = newVRegF(env);
+               HReg src1 = iselFltExpr(env, e->Iex.Triop.details->arg2);
+               HReg src2 = iselFltExpr(env, e->Iex.Triop.details->arg3);
+               set_rounding_mode(env, e->Iex.Triop.details->arg1);
+               addInstr(env, LOONGARCH64Instr_FpBinary(LAfpbin_FMUL_S, src2, src1, dst));
+               set_rounding_mode_default(env);
+               return dst;
+            }
+            case Iop_MulF64: {
+               HReg  dst = newVRegF(env);
+               HReg src1 = iselFltExpr(env, e->Iex.Triop.details->arg2);
+               HReg src2 = iselFltExpr(env, e->Iex.Triop.details->arg3);
+               set_rounding_mode(env, e->Iex.Triop.details->arg1);
+               addInstr(env, LOONGARCH64Instr_FpBinary(LAfpbin_FMUL_D, src2, src1, dst));
+               set_rounding_mode_default(env);
+               return dst;
+            }
+            case Iop_ScaleBF32: {
+               HReg  dst = newVRegF(env);
+               HReg src1 = iselFltExpr(env, e->Iex.Triop.details->arg2);
+               HReg src2 = iselFltExpr(env, e->Iex.Triop.details->arg3);
+               set_rounding_mode(env, e->Iex.Triop.details->arg1);
+               addInstr(env, LOONGARCH64Instr_FpBinary(LAfpbin_FSCALEB_S, src2, src1, dst));
+               set_rounding_mode_default(env);
+               return dst;
+            }
+            case Iop_ScaleBF64: {
+               HReg  dst = newVRegF(env);
+               HReg src1 = iselFltExpr(env, e->Iex.Triop.details->arg2);
+               HReg src2 = iselFltExpr(env, e->Iex.Triop.details->arg3);
+               set_rounding_mode(env, e->Iex.Triop.details->arg1);
+               addInstr(env, LOONGARCH64Instr_FpBinary(LAfpbin_FSCALEB_D, src2, src1, dst));
+               set_rounding_mode_default(env);
+               return dst;
+            }
+            case Iop_SubF32: {
+               HReg  dst = newVRegF(env);
+               HReg src1 = iselFltExpr(env, e->Iex.Triop.details->arg2);
+               HReg src2 = iselFltExpr(env, e->Iex.Triop.details->arg3);
+               set_rounding_mode(env, e->Iex.Triop.details->arg1);
+               addInstr(env, LOONGARCH64Instr_FpBinary(LAfpbin_FSUB_S, src2, src1, dst));
+               set_rounding_mode_default(env);
+               return dst;
+            }
+            case Iop_SubF64: {
+               HReg  dst = newVRegF(env);
+               HReg src1 = iselFltExpr(env, e->Iex.Triop.details->arg2);
+               HReg src2 = iselFltExpr(env, e->Iex.Triop.details->arg3);
+               set_rounding_mode(env, e->Iex.Triop.details->arg1);
+               addInstr(env, LOONGARCH64Instr_FpBinary(LAfpbin_FSUB_D, src2, src1, dst));
+               set_rounding_mode_default(env);
+               return dst;
+            }
             default:
                goto irreducible;
          }
