@@ -7839,91 +7839,232 @@ static Bool gen_beqz ( DisResult* dres, UInt insn,
                        const VexArchInfo* archinfo,
                        const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt offs21 = get_offs21(insn);
+   UInt     rj = get_rj(insn);
+
+   DIP("beqz %s, %d\n", nameIReg(rj), (Int)extend32(offs21, 21));
+
+   IRExpr* cond = binop(Iop_CmpEQ64, getIReg64(rj), mkU64(0));
+   exit(cond, Ijk_Boring, extend64(offs21 << 2, 23));
+
+   return True;
 }
 
 static Bool gen_bnez ( DisResult* dres, UInt insn,
                        const VexArchInfo* archinfo,
                        const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt offs21 = get_offs21(insn);
+   UInt     rj = get_rj(insn);
+
+   DIP("bnez %s, %d\n", nameIReg(rj), (Int)extend32(offs21, 21));
+
+   IRExpr* cond = binop(Iop_CmpNE64, getIReg64(rj), mkU64(0));
+   exit(cond, Ijk_Boring, extend64(offs21 << 2, 23));
+
+   return True;
 }
 
 static Bool gen_bceqz ( DisResult* dres, UInt insn,
                         const VexArchInfo* archinfo,
                         const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt offs21 = get_offs21(insn);
+   UInt cj     = get_cj(insn);
+
+   DIP("bceqz %s, %d\n", nameFCC(cj), (Int)extend32(offs21, 21));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   IRExpr* cc = unop(Iop_8Uto64, getFCC(cj));
+   IRExpr* cond = binop(Iop_CmpEQ64, cc, mkU64(0));
+   exit(cond, Ijk_Boring, extend64(offs21 << 2, 23));
+
+   return True;
 }
 
 static Bool gen_bcnez ( DisResult* dres, UInt insn,
                         const VexArchInfo* archinfo,
                         const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt offs21 = get_offs21(insn);
+   UInt cj     = get_cj(insn);
+
+   DIP("bcnez %s, %d\n", nameFCC(cj), (Int)extend32(offs21, 21));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   IRExpr* cc = unop(Iop_8Uto64, getFCC(cj));
+   IRExpr* cond = binop(Iop_CmpNE64, cc, mkU64(0));
+   exit(cond, Ijk_Boring, extend64(offs21 << 2, 23));
+
+   return True;
 }
 
 static Bool gen_jirl ( DisResult* dres, UInt insn,
                        const VexArchInfo* archinfo,
                        const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt offs16 = get_offs16(insn);
+   UInt     rj = get_rj(insn);
+   UInt     rd = get_rd(insn);
+
+   DIP("jirl %s, %s, %d\n", nameIReg(rd), nameIReg(rj),
+                            (Int)extend32(offs16, 16));
+
+   IRTemp tmp = newTemp(Ity_I64);
+   assign(tmp, getIReg64(rj)); /* This is necessary when rd == rj */
+   putIReg(rd, mkU64(guest_PC_curr_instr + 4));
+   IRExpr* imm = mkU64(extend64(offs16 << 2, 18));
+   putPC(binop(Iop_Add64, mkexpr(tmp), imm));
+
+   dres->whatNext = Dis_StopHere;
+   dres->jk_StopHere = Ijk_Boring;
+
+   return True;
 }
 
 static Bool gen_b ( DisResult* dres, UInt insn,
                     const VexArchInfo* archinfo,
                     const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt offs26 = get_offs26(insn);
+
+   DIP("b %d\n", (Int)extend32(offs26, 26));
+
+   putPC(mkU64(guest_PC_curr_instr + extend64(offs26 << 2, 28)));
+
+   dres->whatNext = Dis_StopHere;
+   dres->jk_StopHere = Ijk_Boring;
+
+   return True;
 }
 
 static Bool gen_bl ( DisResult* dres, UInt insn,
                      const VexArchInfo* archinfo,
                      const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt offs26 = get_offs26(insn);
+
+   DIP("bl %d\n", (Int)extend32(offs26, 26));
+
+   putIReg(1, mkU64(guest_PC_curr_instr + 4));
+   putPC(mkU64(guest_PC_curr_instr + extend64(offs26 << 2, 28)));
+
+   dres->whatNext = Dis_StopHere;
+   dres->jk_StopHere = Ijk_Boring;
+
+   return True;
 }
 
 static Bool gen_beq ( DisResult* dres, UInt insn,
                       const VexArchInfo* archinfo,
                       const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt offs16 = get_offs16(insn);
+   UInt     rj = get_rj(insn);
+   UInt     rd = get_rd(insn);
+
+   DIP("beq %s, %s, %d\n", nameIReg(rj), nameIReg(rd),
+                           (Int)extend32(offs16, 16));
+
+   IRExpr* cond = binop(Iop_CmpEQ64, getIReg64(rj), getIReg64(rd));
+   exit(cond, Ijk_Boring, extend64(offs16 << 2, 18));
+
+   return True;
 }
 
 static Bool gen_bne ( DisResult* dres, UInt insn,
                       const VexArchInfo* archinfo,
                       const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt offs16 = get_offs16(insn);
+   UInt     rj = get_rj(insn);
+   UInt     rd = get_rd(insn);
+
+   DIP("bne %s, %s, %d\n", nameIReg(rj), nameIReg(rd),
+                           (Int)extend32(offs16, 16));
+
+   IRExpr* cond = binop(Iop_CmpNE64, getIReg64(rj), getIReg64(rd));
+   exit(cond, Ijk_Boring, extend64(offs16 << 2, 18));
+
+   return True;
 }
 
 static Bool gen_blt ( DisResult* dres, UInt insn,
                       const VexArchInfo* archinfo,
                       const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt offs16 = get_offs16(insn);
+   UInt     rj = get_rj(insn);
+   UInt     rd = get_rd(insn);
+
+   DIP("blt %s, %s, %d\n", nameIReg(rj), nameIReg(rd),
+                           (Int)extend32(offs16, 16));
+
+   IRExpr* cond = binop(Iop_CmpLT64S, getIReg64(rj), getIReg64(rd));
+   exit(cond, Ijk_Boring, extend64(offs16 << 2, 18));
+
+   return True;
 }
 
 static Bool gen_bge ( DisResult* dres, UInt insn,
                       const VexArchInfo* archinfo,
                       const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt offs16 = get_offs16(insn);
+   UInt     rj = get_rj(insn);
+   UInt     rd = get_rd(insn);
+
+   DIP("bge %s, %s, %d\n", nameIReg(rj), nameIReg(rd),
+                           (Int)extend32(offs16, 16));
+
+   IRExpr* cond = binop(Iop_CmpLE64S, getIReg64(rd), getIReg64(rj));
+   exit(cond, Ijk_Boring, extend64(offs16 << 2, 18));
+
+   return True;
 }
 
 static Bool gen_bltu ( DisResult* dres, UInt insn,
                        const VexArchInfo* archinfo,
                        const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt offs16 = get_offs16(insn);
+   UInt     rj = get_rj(insn);
+   UInt     rd = get_rd(insn);
+
+   DIP("bltu %s, %s, %d\n", nameIReg(rj), nameIReg(rd),
+                            (Int)extend32(offs16, 16));
+
+   IRExpr* cond = binop(Iop_CmpLT64U, getIReg64(rj), getIReg64(rd));
+   exit(cond, Ijk_Boring, extend64(offs16 << 2, 18));
+
+   return True;
 }
 
 static Bool gen_bgeu ( DisResult* dres, UInt insn,
                        const VexArchInfo* archinfo,
                        const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt offs16 = get_offs16(insn);
+   UInt     rj = get_rj(insn);
+   UInt     rd = get_rd(insn);
+
+   DIP("bgeu %s, %s, %d\n", nameIReg(rj), nameIReg(rd),
+                            (Int)extend32(offs16, 16));
+
+   IRExpr* cond = binop(Iop_CmpLE64U, getIReg64(rd), getIReg64(rj));
+   exit(cond, Ijk_Boring, extend64(offs16 << 2, 18));
+
+   return True;
 }
 
 
