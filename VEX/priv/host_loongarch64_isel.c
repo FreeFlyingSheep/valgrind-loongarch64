@@ -2073,6 +2073,56 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       /* --------- UNARY OP --------- */
       case Iex_Unop: {
          switch (e->Iex.Unop.op) {
+            case Iop_AbsF32: {
+               HReg dst = newVRegF(env);
+               HReg src = iselFltExpr(env, e->Iex.Unop.arg);
+               addInstr(env, LOONGARCH64Instr_FpUnary(LAfpun_FABS_S, src, dst));
+               return dst;
+            }
+            case Iop_AbsF64: {
+               HReg dst = newVRegF(env);
+               HReg src = iselFltExpr(env, e->Iex.Unop.arg);
+               addInstr(env, LOONGARCH64Instr_FpUnary(LAfpun_FABS_D, src, dst));
+               return dst;
+            }
+            case Iop_F32toF64: {
+               HReg dst = newVRegF(env);
+               HReg src = iselFltExpr(env, e->Iex.Unop.arg);
+               addInstr(env, LOONGARCH64Instr_FpUnary(LAfpun_FCVT_D_S, src, dst));
+               return dst;
+            }
+            case Iop_I32StoF64: {
+               HReg tmp = newVRegF(env);
+               HReg dst = newVRegF(env);
+               HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+               addInstr(env, LOONGARCH64Instr_FpMove(LAfpmove_MOVGR2FR_D, src, tmp));
+               addInstr(env, LOONGARCH64Instr_FpUnary(LAfpun_FFINT_D_W, tmp, dst));
+               return dst;
+            }
+            case Iop_NegF32: {
+               HReg dst = newVRegF(env);
+               HReg src = iselFltExpr(env, e->Iex.Unop.arg);
+               addInstr(env, LOONGARCH64Instr_FpUnary(LAfpun_FNEG_S, src, dst));
+               return dst;
+            }
+            case Iop_NegF64: {
+               HReg dst = newVRegF(env);
+               HReg src = iselFltExpr(env, e->Iex.Unop.arg);
+               addInstr(env, LOONGARCH64Instr_FpUnary(LAfpun_FNEG_D, src, dst));
+               return dst;
+            }
+            case Iop_ReinterpI32asF32: {
+               HReg dst = newVRegF(env);
+               HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+               addInstr(env, LOONGARCH64Instr_FpMove(LAfpmove_MOVGR2FR_W, src, dst));
+               return dst;
+            }
+            case Iop_ReinterpI64asF64: {
+               HReg dst = newVRegF(env);
+               HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+               addInstr(env, LOONGARCH64Instr_FpMove(LAfpmove_MOVGR2FR_D, src, dst));
+               return dst;
+            }
             default:
                goto irreducible;
          }
