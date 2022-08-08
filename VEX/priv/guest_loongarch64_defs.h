@@ -70,6 +70,7 @@ extern VexGuestLayout loongarch64Guest_layout;
 /*--- loongarch64 guest helpers                         ---*/
 /*---------------------------------------------------------*/
 
+extern ULong loongarch64_calculate_cpucfg    ( ULong src );
 extern ULong loongarch64_calculate_revb_2h   ( ULong src );
 extern ULong loongarch64_calculate_revb_4h   ( ULong src );
 extern ULong loongarch64_calculate_revb_2w   ( ULong src );
@@ -80,6 +81,8 @@ extern ULong loongarch64_calculate_bitrev_4b ( ULong src );
 extern ULong loongarch64_calculate_bitrev_8b ( ULong src );
 extern ULong loongarch64_calculate_bitrev_w  ( ULong src );
 extern ULong loongarch64_calculate_bitrev_d  ( ULong src );
+extern ULong loongarch64_calculate_crc       ( ULong old, ULong msg, ULong len );
+extern ULong loongarch64_calculate_crcc      ( ULong old, ULong msg, ULong len );
 
 #endif /* ndef __VEX_GUEST_LOONGARCH64_DEFS_H */
 
