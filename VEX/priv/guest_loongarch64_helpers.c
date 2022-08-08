@@ -440,6 +440,40 @@ ULong loongarch64_calculate_crcc ( ULong old, ULong msg, ULong len )
    return (ULong)(Long)(Int)res;
 }
 
+ULong loongarch64_calculate_fclass_s ( ULong src )
+{
+   UInt f = src;
+   Bool sign = toBool(f >> 31);
+   if ((f & 0x7fffffff) == 0x7f800000) {
+      return sign ? 1 << 2 : 1 << 6;
+   } else if ((f & 0x7fffffff) == 0) {
+      return sign ? 1 << 5 : 1 << 9;
+   } else if ((f & 0x7f800000) == 0) {
+      return sign ? 1 << 4 : 1 << 8;
+   } else if ((f & ~(1 << 31)) > 0x7f800000) {
+      return ((UInt)(f << 1) >= 0xff800000) ? 1 << 1 : 1 << 0;
+   } else {
+      return sign ? 1 << 3 : 1 << 7;
+   }
+}
+
+ULong loongarch64_calculate_fclass_d ( ULong src )
+{
+   ULong f = src;
+   Bool sign = toBool(f >> 63);
+   if ((f & 0x7fffffffffffffffULL) == 0x7ff0000000000000ULL) {
+      return sign ? 1 << 2 : 1 << 6;
+   } else if ((f & 0x7fffffffffffffffULL) == 0) {
+      return sign ? 1 << 5 : 1 << 9;
+   } else if ((f & 0x7ff0000000000000ULL) == 0) {
+      return sign ? 1 << 4 : 1 << 8;
+   } else if ((f & ~(1ULL << 63)) > 0x7ff0000000000000ULL) {
+      return ((f << 1) >= 0xfff0000000000000ULL) ? 1 << 1 : 1 << 0;
+   } else {
+      return sign ? 1 << 3 : 1 << 7;
+   }
+}
+
 #if defined(__loongarch__)
 #define ASM_VOLATILE_UNARY(inst)                         \
    __asm__ volatile("movfcsr2gr $s0, $r0         \n\t"   \

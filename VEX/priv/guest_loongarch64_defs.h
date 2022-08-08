@@ -117,6 +117,8 @@ extern ULong loongarch64_calculate_bitrev_w  ( ULong src );
 extern ULong loongarch64_calculate_bitrev_d  ( ULong src );
 extern ULong loongarch64_calculate_crc       ( ULong old, ULong msg, ULong len );
 extern ULong loongarch64_calculate_crcc      ( ULong old, ULong msg, ULong len );
+extern ULong loongarch64_calculate_fclass_s  ( ULong src );
+extern ULong loongarch64_calculate_fclass_d  ( ULong src );
 extern ULong loongarch64_calculate_FCSR      ( enum fpop op, ULong src1,
                                                ULong src2, ULong src3 );
 

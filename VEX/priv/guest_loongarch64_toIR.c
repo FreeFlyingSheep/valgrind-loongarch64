@@ -4522,294 +4522,984 @@ static Bool gen_fadd_s ( DisResult* dres, UInt insn,
                          const VexArchInfo* archinfo,
                          const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fadd.s %s, %s, %s\n", nameFReg(fd), nameFReg(fj), nameFReg(fk));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FADD_S, 2, fj, fk, 0);
+   IRExpr* rm = get_rounding_mode();
+   putFReg32(fd, triop(Iop_AddF32, rm, getFReg32(fj), getFReg32(fk)));
+
+   return True;
 }
 
 static Bool gen_fadd_d ( DisResult* dres, UInt insn,
                          const VexArchInfo* archinfo,
                          const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fadd.d %s, %s, %s\n", nameFReg(fd), nameFReg(fj), nameFReg(fk));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FADD_D, 2, fj, fk, 0);
+   IRExpr* rm = get_rounding_mode();
+   putFReg64(fd, triop(Iop_AddF64, rm, getFReg64(fj), getFReg64(fk)));
+
+   return True;
 }
 
 static Bool gen_fsub_s ( DisResult* dres, UInt insn,
                          const VexArchInfo* archinfo,
                          const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fsub.s %s, %s, %s\n", nameFReg(fd), nameFReg(fj), nameFReg(fk));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FSUB_S, 2, fj, fk, 0);
+   IRExpr* rm = get_rounding_mode();
+   putFReg32(fd, triop(Iop_SubF32, rm, getFReg32(fj), getFReg32(fk)));
+
+   return True;
 }
 
 static Bool gen_fsub_d ( DisResult* dres, UInt insn,
                          const VexArchInfo* archinfo,
                          const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fsub.d %s, %s, %s\n", nameFReg(fd), nameFReg(fj), nameFReg(fk));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FSUB_D, 2, fj, fk, 0);
+   IRExpr* rm = get_rounding_mode();
+   putFReg64(fd, triop(Iop_SubF64, rm, getFReg64(fj), getFReg64(fk)));
+
+   return True;
 }
 
 static Bool gen_fmul_s ( DisResult* dres, UInt insn,
                          const VexArchInfo* archinfo,
                          const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fmul.s %s, %s, %s\n", nameFReg(fd), nameFReg(fj), nameFReg(fk));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FMUL_S, 2, fj, fk, 0);
+   IRExpr* rm = get_rounding_mode();
+   putFReg32(fd, triop(Iop_MulF32, rm, getFReg32(fj), getFReg32(fk)));
+
+   return True;
 }
 
 static Bool gen_fmul_d ( DisResult* dres, UInt insn,
                          const VexArchInfo* archinfo,
                          const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fmul.d %s, %s, %s\n", nameFReg(fd), nameFReg(fj), nameFReg(fk));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FMUL_D, 2, fj, fk, 0);
+   IRExpr* rm = get_rounding_mode();
+   putFReg64(fd, triop(Iop_MulF64, rm, getFReg64(fj), getFReg64(fk)));
+
+   return True;
 }
 
 static Bool gen_fdiv_s ( DisResult* dres, UInt insn,
                          const VexArchInfo* archinfo,
                          const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fdiv.s %s, %s, %s\n", nameFReg(fd), nameFReg(fj), nameFReg(fk));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FDIV_S, 2, fj, fk, 0);
+   IRExpr* rm = get_rounding_mode();
+   putFReg32(fd, triop(Iop_DivF32, rm, getFReg32(fj), getFReg32(fk)));
+
+   return True;
 }
 
 static Bool gen_fdiv_d ( DisResult* dres, UInt insn,
                          const VexArchInfo* archinfo,
                          const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fdiv.d %s, %s, %s\n", nameFReg(fd), nameFReg(fj), nameFReg(fk));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FDIV_D, 2, fj, fk, 0);
+   IRExpr* rm = get_rounding_mode();
+   putFReg64(fd, triop(Iop_DivF64, rm, getFReg64(fj), getFReg64(fk)));
+
+   return True;
 }
 
 static Bool gen_fmadd_s ( DisResult* dres, UInt insn,
                           const VexArchInfo* archinfo,
                           const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fa = get_fa(insn);
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fmadd.s %s, %s, %s, %s\n", nameFReg(fd), nameFReg(fj),
+                                   nameFReg(fk), nameFReg(fa));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FMADD_S, 3, fj, fk, fa);
+   IRExpr* rm = get_rounding_mode();
+   putFReg32(fd, qop(Iop_MAddF32, rm, getFReg32(fj),
+                     getFReg32(fk), getFReg32(fa)));
+
+   return True;
 }
 
 static Bool gen_fmadd_d ( DisResult* dres, UInt insn,
                           const VexArchInfo* archinfo,
                           const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fa = get_fa(insn);
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fmadd.d %s, %s, %s, %s\n", nameFReg(fd), nameFReg(fj),
+                                   nameFReg(fk), nameFReg(fa));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FMADD_D, 3, fj, fk, fa);
+   IRExpr* rm = get_rounding_mode();
+   putFReg64(fd, qop(Iop_MAddF64, rm, getFReg64(fj),
+                     getFReg64(fk), getFReg64(fa)));
+
+   return True;
 }
 
 static Bool gen_fmsub_s ( DisResult* dres, UInt insn,
                           const VexArchInfo* archinfo,
                           const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fa = get_fa(insn);
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fmsub.s %s, %s, %s, %s\n", nameFReg(fd), nameFReg(fj),
+                                   nameFReg(fk), nameFReg(fa));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FMSUB_S, 3, fj, fk, fa);
+   IRExpr* rm = get_rounding_mode();
+   putFReg32(fd, qop(Iop_MSubF32, rm, getFReg32(fj),
+                     getFReg32(fk), getFReg32(fa)));
+
+   return True;
 }
 
 static Bool gen_fmsub_d ( DisResult* dres, UInt insn,
                           const VexArchInfo* archinfo,
                           const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fa = get_fa(insn);
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fmsub.d %s, %s, %s, %s\n", nameFReg(fd), nameFReg(fj),
+                                   nameFReg(fk), nameFReg(fa));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FMSUB_D, 3, fj, fk, fa);
+   IRExpr* rm = get_rounding_mode();
+   putFReg64(fd, qop(Iop_MSubF64, rm, getFReg64(fj),
+                     getFReg64(fk), getFReg64(fa)));
+
+   return True;
 }
 
 static Bool gen_fnmadd_s ( DisResult* dres, UInt insn,
                            const VexArchInfo* archinfo,
                            const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fa = get_fa(insn);
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fnmadd.s %s, %s, %s, %s\n", nameFReg(fd), nameFReg(fj),
+                                    nameFReg(fk), nameFReg(fa));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FNMADD_S, 3, fj, fk, fa);
+   IRExpr* rm = get_rounding_mode();
+   IRExpr* madd = qop(Iop_MAddF32, rm, getFReg32(fj),
+                      getFReg32(fk), getFReg32(fa));
+   putFReg32(fd, unop(Iop_NegF32, madd));
+
+   return True;
 }
 
 static Bool gen_fnmadd_d ( DisResult* dres, UInt insn,
                            const VexArchInfo* archinfo,
                            const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fa = get_fa(insn);
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fnmadd.d %s, %s, %s, %s\n", nameFReg(fd), nameFReg(fj),
+                                    nameFReg(fk), nameFReg(fa));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FNMADD_D, 3, fj, fk, fa);
+   IRExpr* rm = get_rounding_mode();
+   IRExpr* madd = qop(Iop_MAddF64, rm, getFReg64(fj),
+                      getFReg64(fk), getFReg64(fa));
+   putFReg64(fd, unop(Iop_NegF64, madd));
+
+   return True;
 }
 
 static Bool gen_fnmsub_s ( DisResult* dres, UInt insn,
                            const VexArchInfo* archinfo,
                            const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fa = get_fa(insn);
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fnmsub.s %s, %s, %s, %s\n", nameFReg(fd), nameFReg(fj),
+                                    nameFReg(fk), nameFReg(fa));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FNMSUB_S, 3, fj, fk, fa);
+   IRExpr* rm = get_rounding_mode();
+   IRExpr* msub = qop(Iop_MSubF32, rm, getFReg32(fj),
+                      getFReg32(fk), getFReg32(fa));
+   putFReg32(fd, unop(Iop_NegF32, msub));
+
+   return True;
 }
 
 static Bool gen_fnmsub_d ( DisResult* dres, UInt insn,
                            const VexArchInfo* archinfo,
                            const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fa = get_fa(insn);
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fnmsub.d %s, %s, %s, %s\n", nameFReg(fd), nameFReg(fj),
+                                    nameFReg(fk), nameFReg(fa));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FNMSUB_D, 3, fj, fk, fa);
+   IRExpr* rm = get_rounding_mode();
+   IRExpr* msub = qop(Iop_MSubF64, rm, getFReg64(fj),
+                      getFReg64(fk), getFReg64(fa));
+   putFReg64(fd, unop(Iop_NegF64, msub));
+
+   return True;
 }
 
 static Bool gen_fmax_s ( DisResult* dres, UInt insn,
                          const VexArchInfo* archinfo,
                          const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fmax.s %s, %s, %s\n", nameFReg(fd), nameFReg(fj), nameFReg(fk));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FMAX_S, 2, fj, fk, 0);
+   putFReg32(fd, binop(Iop_MaxNumF32, getFReg32(fj), getFReg32(fk)));
+
+   return True;
 }
 
 static Bool gen_fmax_d ( DisResult* dres, UInt insn,
                          const VexArchInfo* archinfo,
                          const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fmax.d %s, %s, %s\n", nameFReg(fd), nameFReg(fj), nameFReg(fk));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FMAX_D, 2, fj, fk, 0);
+   putFReg64(fd, binop(Iop_MaxNumF64, getFReg64(fj), getFReg64(fk)));
+
+   return True;
 }
 
 static Bool gen_fmin_s ( DisResult* dres, UInt insn,
                          const VexArchInfo* archinfo,
                          const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fmin.s %s, %s, %s\n", nameFReg(fd), nameFReg(fj), nameFReg(fk));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FMIN_S, 2, fj, fk, 0);
+   putFReg32(fd, binop(Iop_MinNumF32, getFReg32(fj), getFReg32(fk)));
+
+   return True;
 }
 
 static Bool gen_fmin_d ( DisResult* dres, UInt insn,
                          const VexArchInfo* archinfo,
                          const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fmin.d %s, %s, %s\n", nameFReg(fd), nameFReg(fj), nameFReg(fk));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FMIN_D, 2, fj, fk, 0);
+   putFReg64(fd, binop(Iop_MinNumF64, getFReg64(fj), getFReg64(fk)));
+
+   return True;
 }
 
 static Bool gen_fmaxa_s ( DisResult* dres, UInt insn,
                           const VexArchInfo* archinfo,
                           const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fmaxa.s %s, %s, %s\n", nameFReg(fd), nameFReg(fj), nameFReg(fk));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FMAXA_S, 2, fj, fk, 0);
+   putFReg32(fd, binop(Iop_MaxNumAbsF32, getFReg32(fj), getFReg32(fk)));
+
+   return True;
 }
 
 static Bool gen_fmaxa_d ( DisResult* dres, UInt insn,
                           const VexArchInfo* archinfo,
                           const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fmaxa.d %s, %s, %s\n", nameFReg(fd), nameFReg(fj), nameFReg(fk));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FMAXA_D, 2, fj, fk, 0);
+   putFReg64(fd, binop(Iop_MaxNumAbsF64, getFReg64(fj), getFReg64(fk)));
+
+   return True;
 }
 
 static Bool gen_fmina_s ( DisResult* dres, UInt insn,
                           const VexArchInfo* archinfo,
                           const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fmina.s %s, %s, %s\n", nameFReg(fd), nameFReg(fj), nameFReg(fk));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FMINA_S, 2, fj, fk, 0);
+   putFReg32(fd, binop(Iop_MinNumAbsF32, getFReg32(fj), getFReg32(fk)));
+
+   return True;
 }
 
 static Bool gen_fmina_d ( DisResult* dres, UInt insn,
                           const VexArchInfo* archinfo,
                           const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fmina.d %s, %s, %s\n", nameFReg(fd), nameFReg(fj), nameFReg(fk));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FMINA_D, 2, fj, fk, 0);
+   putFReg64(fd, binop(Iop_MinNumAbsF64, getFReg64(fj), getFReg64(fk)));
+
+   return True;
 }
 
 static Bool gen_fabs_s ( DisResult* dres, UInt insn,
                          const VexArchInfo* archinfo,
                          const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fabs.s %s, %s\n", nameFReg(fd), nameFReg(fj));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FABS_S, 1, fj, 0, 0);
+   putFReg32(fd, unop(Iop_AbsF32, getFReg32(fj)));
+
+   return True;
 }
 
 static Bool gen_fabs_d ( DisResult* dres, UInt insn,
                          const VexArchInfo* archinfo,
                          const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fabs.d %s, %s\n", nameFReg(fd), nameFReg(fj));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FABS_D, 1, fj, 0, 0);
+   putFReg64(fd, unop(Iop_AbsF64, getFReg64(fj)));
+
+   return True;
 }
 
 static Bool gen_fneg_s ( DisResult* dres, UInt insn,
                          const VexArchInfo* archinfo,
                          const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fneg.s %s, %s\n", nameFReg(fd), nameFReg(fj));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FNEG_S, 1, fj, 0, 0);
+   putFReg32(fd, unop(Iop_NegF32, getFReg32(fj)));
+
+   return True;
 }
 
 static Bool gen_fneg_d ( DisResult* dres, UInt insn,
                          const VexArchInfo* archinfo,
                          const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fneg.d %s, %s\n", nameFReg(fd), nameFReg(fj));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FNEG_D, 1, fj, 0, 0);
+   putFReg64(fd, unop(Iop_NegF64, getFReg64(fj)));
+
+   return True;
 }
 
 static Bool gen_fsqrt_s ( DisResult* dres, UInt insn,
                           const VexArchInfo* archinfo,
                           const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fsqrt.s %s, %s\n", nameFReg(fd), nameFReg(fj));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FSQRT_S, 1, fj, 0, 0);
+   IRExpr* rm = get_rounding_mode();
+   putFReg32(fd, binop(Iop_SqrtF32, rm, getFReg32(fj)));
+
+   return True;
 }
 
 static Bool gen_fsqrt_d ( DisResult* dres, UInt insn,
                           const VexArchInfo* archinfo,
                           const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fsqrt.d %s, %s\n", nameFReg(fd), nameFReg(fj));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FSQRT_D, 1, fj, 0, 0);
+   IRExpr* rm = get_rounding_mode();
+   putFReg64(fd, binop(Iop_SqrtF64, rm, getFReg64(fj)));
+
+   return True;
 }
 
 static Bool gen_frecip_s ( DisResult* dres, UInt insn,
                            const VexArchInfo* archinfo,
                            const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("frecip.s %s, %s\n", nameFReg(fd), nameFReg(fj));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FRECIP_S, 1, fj, 0, 0);
+   IRExpr* rm = get_rounding_mode();
+   putFReg32(fd, triop(Iop_DivF32, rm, mkF32i(1), getFReg32(fj)));
+
+   return True;
 }
 
 static Bool gen_frecip_d ( DisResult* dres, UInt insn,
                            const VexArchInfo* archinfo,
                            const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("frecip.d %s, %s\n", nameFReg(fd), nameFReg(fj));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FRECIP_D, 1, fj, 0, 0);
+   IRExpr* rm = get_rounding_mode();
+   putFReg64(fd, triop(Iop_DivF64, rm, mkF64i(1), getFReg64(fj)));
+
+   return True;
 }
 
 static Bool gen_frsqrt_s ( DisResult* dres, UInt insn,
                            const VexArchInfo* archinfo,
                            const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("frsqrt.s %s, %s\n", nameFReg(fd), nameFReg(fj));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FRSQRT_S, 1, fj, 0, 0);
+   IRExpr* rm = get_rounding_mode();
+   putFReg32(fd, binop(Iop_RSqrtF32, rm, getFReg32(fj)));
+
+   return True;
 }
 
 static Bool gen_frsqrt_d ( DisResult* dres, UInt insn,
                            const VexArchInfo* archinfo,
                            const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("frsqrt.d %s, %s\n", nameFReg(fd), nameFReg(fj));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FRSQRT_D, 1, fj, 0, 0);
+   IRExpr* rm = get_rounding_mode();
+   putFReg64(fd, binop(Iop_RSqrtF64, rm, getFReg64(fj)));
+
+   return True;
 }
 
 static Bool gen_fscaleb_s ( DisResult* dres, UInt insn,
                             const VexArchInfo* archinfo,
                             const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fscaleb.s %s, %s, %s\n", nameFReg(fd), nameFReg(fj), nameFReg(fk));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FSCALEB_S, 2, fj, fk, 0);
+   IRExpr* rm = get_rounding_mode();
+   putFReg32(fd, triop(Iop_ScaleBF32, rm, getFReg32(fj), getFReg32(fk)));
+
+   return True;
 }
 
 static Bool gen_fscaleb_d ( DisResult* dres, UInt insn,
                             const VexArchInfo* archinfo,
                             const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fscaleb.d %s, %s, %s\n", nameFReg(fd), nameFReg(fj), nameFReg(fk));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FSCALEB_D, 2, fj, fk, 0);
+   IRExpr* rm = get_rounding_mode();
+   putFReg64(fd, triop(Iop_ScaleBF64, rm, getFReg64(fj), getFReg64(fk)));
+
+   return True;
 }
 
 static Bool gen_flogb_s ( DisResult* dres, UInt insn,
                           const VexArchInfo* archinfo,
                           const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("flogb.s %s, %s\n", nameFReg(fd), nameFReg(fj));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FLOGB_S, 1, fj, 0, 0);
+   IRExpr* rm = get_rounding_mode();
+   putFReg32(fd, binop(Iop_LogBF32, rm, getFReg32(fj)));
+
+   return True;
 }
 
 static Bool gen_flogb_d ( DisResult* dres, UInt insn,
                           const VexArchInfo* archinfo,
                           const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("flogb.d %s, %s\n", nameFReg(fd), nameFReg(fj));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   calculateFCSR(FLOGB_D, 1, fj, 0, 0);
+   IRExpr* rm = get_rounding_mode();
+   putFReg64(fd, binop(Iop_LogBF64, rm, getFReg64(fj)));
+
+   return True;
 }
 
 static Bool gen_fcopysign_s ( DisResult* dres, UInt insn,
                               const VexArchInfo* archinfo,
                               const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fcopysign.s %s, %s, %s\n", nameFReg(fd), nameFReg(fj), nameFReg(fk));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   IRExpr* i1 = unop(Iop_ReinterpF32asI32, getFReg32(fj));
+   IRExpr* shl1 = binop(Iop_Shl32, i1, mkU8(1));
+   IRExpr* shr1 = binop(Iop_Shr32, shl1, mkU8(1));
+   IRExpr* i2 = unop(Iop_ReinterpF32asI32, getFReg32(fk));
+   IRExpr* shr2 = binop(Iop_Shr32, i2, mkU8(31));
+   IRExpr* shl2 = binop(Iop_Shl32, shr2, mkU8(31));
+   IRExpr* or = binop(Iop_Or32, shr1, shl2);
+   putFReg32(fd, unop(Iop_ReinterpI32asF32, or));
+
+   return True;
 }
 
 static Bool gen_fcopysign_d ( DisResult* dres, UInt insn,
                               const VexArchInfo* archinfo,
                               const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fk = get_fk(insn);
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fcopysign.d %s, %s, %s\n", nameFReg(fd), nameFReg(fj), nameFReg(fk));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   IRExpr* i1 = unop(Iop_ReinterpF64asI64, getFReg64(fj));
+   IRExpr* shl1 = binop(Iop_Shl64, i1, mkU8(1));
+   IRExpr* shr1 = binop(Iop_Shr64, shl1, mkU8(1));
+   IRExpr* i2 = unop(Iop_ReinterpF64asI64, getFReg64(fk));
+   IRExpr* shr2 = binop(Iop_Shr64, i2, mkU8(63));
+   IRExpr* shl2 = binop(Iop_Shl64, shr2, mkU8(63));
+   IRExpr* or = binop(Iop_Or64, shr1, shl2);
+   putFReg64(fd, unop(Iop_ReinterpI64asF64, or));
+
+   return True;
 }
 
 static Bool gen_fclass_s ( DisResult* dres, UInt insn,
                            const VexArchInfo* archinfo,
                            const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fclass.s %s, %s\n", nameFReg(fd), nameFReg(fj));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   IRExpr** arg = mkIRExprVec_1(unop(Iop_ReinterpF64asI64, getFReg64(fj)));
+   IRExpr* call = mkIRExprCCall(Ity_I64, 0/*regparms*/,
+                                "loongarch64_calculate_fclass_s",
+                                &loongarch64_calculate_fclass_s,
+                                arg);
+   putFReg32(fd, unop(Iop_ReinterpI32asF32, unop(Iop_64to32, call)));
+
+   return True;
 }
 
 static Bool gen_fclass_d ( DisResult* dres, UInt insn,
                            const VexArchInfo* archinfo,
                            const VexAbiInfo* abiinfo )
 {
-   return False;
+   UInt fj = get_fj(insn);
+   UInt fd = get_fd(insn);
+
+   DIP("fclass.d %s, %s\n", nameFReg(fd), nameFReg(fj));
+
+   if (!(archinfo->hwcaps & VEX_HWCAPS_LOONGARCH_FP)) {
+      dres->jk_StopHere = Ijk_SigILL;
+      dres->whatNext    = Dis_StopHere;
+      return True;
+   }
+
+   IRExpr** arg = mkIRExprVec_1(unop(Iop_ReinterpF64asI64, getFReg64(fj)));
+   IRExpr* call = mkIRExprCCall(Ity_I64, 0/*regparms*/,
+                                "loongarch64_calculate_fclass_d",
+                                &loongarch64_calculate_fclass_d,
+                                arg);
+   putFReg64(fd, unop(Iop_ReinterpI64asF64, call));
+
+   return True;
 }
 
 
