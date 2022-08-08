@@ -388,6 +388,8 @@ typedef struct {
    } LAin;
 } LOONGARCH64Instr;
 
+extern LOONGARCH64Instr* LOONGARCH64Instr_LI        ( ULong imm, HReg dst );
+
 extern void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 );
 
 /* Some functions that insulate the register allocator from details
