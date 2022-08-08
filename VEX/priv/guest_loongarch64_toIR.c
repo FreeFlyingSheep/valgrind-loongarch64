@@ -537,6 +537,235 @@ static void putPC ( IRExpr* e )
    stmt(IRStmt_Put(offsetof(VexGuestLOONGARCH64State, guest_PC), e));
 }
 
+/* ---------------- Floating point registers ---------------- */
+
+static Int offsetFReg ( UInt iregNo )
+{
+   switch (iregNo) {
+      case 0:  return offsetof(VexGuestLOONGARCH64State, guest_F0);
+      case 1:  return offsetof(VexGuestLOONGARCH64State, guest_F1);
+      case 2:  return offsetof(VexGuestLOONGARCH64State, guest_F2);
+      case 3:  return offsetof(VexGuestLOONGARCH64State, guest_F3);
+      case 4:  return offsetof(VexGuestLOONGARCH64State, guest_F4);
+      case 5:  return offsetof(VexGuestLOONGARCH64State, guest_F5);
+      case 6:  return offsetof(VexGuestLOONGARCH64State, guest_F6);
+      case 7:  return offsetof(VexGuestLOONGARCH64State, guest_F7);
+      case 8:  return offsetof(VexGuestLOONGARCH64State, guest_F8);
+      case 9:  return offsetof(VexGuestLOONGARCH64State, guest_F9);
+      case 10: return offsetof(VexGuestLOONGARCH64State, guest_F10);
+      case 11: return offsetof(VexGuestLOONGARCH64State, guest_F11);
+      case 12: return offsetof(VexGuestLOONGARCH64State, guest_F12);
+      case 13: return offsetof(VexGuestLOONGARCH64State, guest_F13);
+      case 14: return offsetof(VexGuestLOONGARCH64State, guest_F14);
+      case 15: return offsetof(VexGuestLOONGARCH64State, guest_F15);
+      case 16: return offsetof(VexGuestLOONGARCH64State, guest_F16);
+      case 17: return offsetof(VexGuestLOONGARCH64State, guest_F17);
+      case 18: return offsetof(VexGuestLOONGARCH64State, guest_F18);
+      case 19: return offsetof(VexGuestLOONGARCH64State, guest_F19);
+      case 20: return offsetof(VexGuestLOONGARCH64State, guest_F20);
+      case 21: return offsetof(VexGuestLOONGARCH64State, guest_F21);
+      case 22: return offsetof(VexGuestLOONGARCH64State, guest_F22);
+      case 23: return offsetof(VexGuestLOONGARCH64State, guest_F23);
+      case 24: return offsetof(VexGuestLOONGARCH64State, guest_F24);
+      case 25: return offsetof(VexGuestLOONGARCH64State, guest_F25);
+      case 26: return offsetof(VexGuestLOONGARCH64State, guest_F26);
+      case 27: return offsetof(VexGuestLOONGARCH64State, guest_F27);
+      case 28: return offsetof(VexGuestLOONGARCH64State, guest_F28);
+      case 29: return offsetof(VexGuestLOONGARCH64State, guest_F29);
+      case 30: return offsetof(VexGuestLOONGARCH64State, guest_F30);
+      case 31: return offsetof(VexGuestLOONGARCH64State, guest_F31);
+      default: vassert(0);
+   }
+}
+
+static Int offsetFCC ( UInt iregNo )
+{
+   switch (iregNo) {
+      case 0:  return offsetof(VexGuestLOONGARCH64State, guest_FCC0);
+      case 1:  return offsetof(VexGuestLOONGARCH64State, guest_FCC1);
+      case 2:  return offsetof(VexGuestLOONGARCH64State, guest_FCC2);
+      case 3:  return offsetof(VexGuestLOONGARCH64State, guest_FCC3);
+      case 4:  return offsetof(VexGuestLOONGARCH64State, guest_FCC4);
+      case 5:  return offsetof(VexGuestLOONGARCH64State, guest_FCC5);
+      case 6:  return offsetof(VexGuestLOONGARCH64State, guest_FCC6);
+      case 7:  return offsetof(VexGuestLOONGARCH64State, guest_FCC7);
+      default: vassert(0);
+   }
+}
+
+static IRExpr* getFReg64 ( UInt iregNo )
+{
+   return IRExpr_Get(offsetFReg(iregNo), Ity_F64);
+}
+
+static IRExpr* getFReg32 ( UInt iregNo )
+{
+   /* Get FReg32 from FReg64.
+      We could probably use IRExpr_Get(offsetFReg(iregNo), Ity_F32),
+      but that would cause Memcheck to report some errors.
+    */
+   IRExpr* i = unop(Iop_ReinterpF64asI64, getFReg64(iregNo));
+   return unop(Iop_ReinterpI32asF32, unop(Iop_64to32, i));
+}
+
+static IRExpr* getFCC ( UInt iregNo )
+{
+   return IRExpr_Get(offsetFCC(iregNo), Ity_I8);
+}
+
+static IRExpr* getFCSR ( UInt iregNo )
+{
+   /*
+      bits  | name
+      ---------------
+      4:0   | Enables
+      7:5   | 0
+      9:8   | RM
+      15:10 | 0
+      20:16 | Flags
+      23:21 | 0
+      28:24 | Cause
+      31:29 | 0
+    */
+   Int offs = offsetof(VexGuestLOONGARCH64State, guest_FCSR);
+   IRExpr* fcsr0 = IRExpr_Get(offs, Ity_I32);
+   switch (iregNo) {
+      case 0:
+         return fcsr0;
+      case 1:
+         /* FCSR1 is Enables of FCSR0.  It seems that the hardware
+            implementation is that the 7th bit belongs to FCSR1. */
+         return binop(Iop_And32, fcsr0, mkU32(0x0000009f));
+      case 2:
+         /* FCSR2 is Cause and Flags of FCSR0. */
+         return binop(Iop_And32, fcsr0, mkU32(0x1f1f0000));
+      case 3:
+         /* FCSR3 is RM of FCSR0. */
+         return binop(Iop_And32, fcsr0, mkU32(0x00000300));
+      default:
+         vassert(0);
+   }
+}
+
+static void putFReg32 ( UInt iregNo, IRExpr* e )
+{
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_F32);
+   stmt(IRStmt_Put(offsetFReg(iregNo), e));
+}
+
+static void putFReg64 ( UInt iregNo, IRExpr* e )
+{
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_F64);
+   stmt(IRStmt_Put(offsetFReg(iregNo), e));
+}
+
+static void putFCC ( UInt iregNo, IRExpr* e )
+{
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I8);
+   stmt(IRStmt_Put(offsetFCC(iregNo), e));
+}
+
+static void putFCSR ( UInt iregNo, IRExpr* e )
+{
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I32);
+   IRExpr* fcsr0 = getFCSR(0);
+   IRExpr* and1;
+   IRExpr* and2;
+   switch (iregNo) {
+      case 0:
+         /* It seems that the hardware implementation allows the 6th
+            bit and the 7th bit to be non-zero. */
+         and1 = getIReg32(0);
+         and2 = binop(Iop_And32, e, mkU32(0x1f1f03df));
+         break;
+      case 1:
+         /* FCSR1 is Enables of FCSR0.  It seems that the hardware
+            implementation is that the 7th bit belongs to FCSR1. */
+         and1 = binop(Iop_And32, fcsr0, mkU32(0xffffff60));
+         and2 = binop(Iop_And32, e, mkU32(0x0000009f));
+         break;
+      case 2:
+         /* FCSR2 is Cause and Flags of FCSR0. */
+         and1 = binop(Iop_And32, fcsr0, mkU32(0xe0e0ffff));
+         and2 = binop(Iop_And32, e, mkU32(0x1f1f0000));
+         break;
+      case 3:
+         /* FCSR3 is RM of FCSR0. */
+         and1 = binop(Iop_And32, fcsr0, mkU32(0xfffffcff));
+         and2 = binop(Iop_And32, e, mkU32(0x00000300));
+         break;
+      default:
+         vassert(0);
+   }
+   Int offs = offsetof(VexGuestLOONGARCH64State, guest_FCSR);
+   stmt(IRStmt_Put(offs, binop(Iop_Or32, and1, and2)));
+}
+
+static IRExpr* get_rounding_mode ( void )
+{
+   /*
+      rounding mode | LOONGARCH | IR
+      ------------------------------
+      to nearest    | 00        | 00
+      to zero       | 01        | 11
+      to +infinity  | 10        | 10
+      to -infinity  | 11        | 01
+   */
+
+   /* Bits 8 to 9 in FCSR are rounding mode. */
+   IRExpr* fcsr = getFCSR(0);
+   IRExpr* shr = binop(Iop_Shr32, fcsr, mkU8(8));
+   IRTemp rm = newTemp(Ity_I32);
+   assign(rm, binop(Iop_And32, shr, mkU32(0x3)));
+
+   /* rm = XOR(rm, (rm << 1) & 2) */
+   IRExpr* shl = binop(Iop_Shl32, mkexpr(rm), mkU8(1));
+   IRExpr* and = binop(Iop_And32, shl, mkU32(2));
+   return binop(Iop_Xor32, mkexpr(rm), and);
+}
+
+static void calculateFCSR ( enum fpop op, UInt nargs,
+                            UInt src1, UInt src2, UInt src3 )
+{
+   IRExpr* s1 = NULL;
+   IRExpr* s2 = NULL;
+   IRExpr* s3 = NULL;
+   switch (nargs) {
+      case 3: s3 = unop(Iop_ReinterpF64asI64, getFReg64(src3)); /* fallthrough */
+      case 2: s2 = unop(Iop_ReinterpF64asI64, getFReg64(src2)); /* fallthrough */
+      case 1: s1 = unop(Iop_ReinterpF64asI64, getFReg64(src1)); break;
+      default: vassert(0);
+   }
+   IRExpr** arg = mkIRExprVec_4(mkU64(op), s1, s2, s3);
+   IRExpr* call = mkIRExprCCall(Ity_I64, 0/*regparms*/,
+                                "loongarch64_calculate_FCSR",
+                                &loongarch64_calculate_FCSR,
+                                arg);
+   IRTemp fcsr2 = newTemp(Ity_I32);
+   assign(fcsr2, unop(Iop_64to32, call));
+   putFCSR(2, mkexpr(fcsr2));
+}
+
+static IRExpr* gen_round_to_nearest ( void )
+{
+   return mkU32(0x0);
+}
+
+static IRExpr* gen_round_down ( void )
+{
+   return mkU32(0x1);
+}
+
+static IRExpr* gen_round_up ( void )
+{
+   return mkU32(0x2);
+}
+
+static IRExpr* gen_round_to_zero ( void )
+{
+   return mkU32(0x3);
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Helpers for fixed point arithmetic insns             ---*/

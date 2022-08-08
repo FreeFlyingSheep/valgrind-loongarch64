@@ -440,6 +440,396 @@ ULong loongarch64_calculate_crcc ( ULong old, ULong msg, ULong len )
    return (ULong)(Long)(Int)res;
 }
 
+#if defined(__loongarch__)
+#define ASM_VOLATILE_UNARY(inst)                         \
+   __asm__ volatile("movfcsr2gr $s0, $r0         \n\t"   \
+                    "movgr2fcsr $r2, $zero       \n\t"   \
+                    #inst"      $f24, %1         \n\t"   \
+                    "movfcsr2gr %0, $r2          \n\t"   \
+                    "movgr2fcsr $r0, $s0         \n\t"   \
+                    : "=r" (fcsr2)                       \
+                    : "f" (src1)                         \
+                    : "$s0", "$f24"                      \
+                   )
+
+#define ASM_VOLATILE_BINARY(inst)                        \
+   __asm__ volatile("movfcsr2gr $s0, $r0         \n\t"   \
+                    "movgr2fcsr $r2, $zero       \n\t"   \
+                    #inst"      $f24, %1, %2     \n\t"   \
+                    "movfcsr2gr %0, $r2          \n\t"   \
+                    "movgr2fcsr $r0, $s0         \n\t"   \
+                    : "=r" (fcsr2)                       \
+                    : "f" (src1), "f" (src2)             \
+                    : "$s0", "$f24"                      \
+                   )
+
+#define ASM_VOLATILE_TRINARY(inst)                       \
+   __asm__ volatile("movfcsr2gr $s0, $r0         \n\t"   \
+                    "movgr2fcsr $r2, $zero       \n\t"   \
+                    #inst"      $f24, %1, %2, %3 \n\t"   \
+                    "movfcsr2gr %0, $r2          \n\t"   \
+                    "movgr2fcsr $r0, $s0         \n\t"   \
+                    : "=r" (fcsr2)                       \
+                    : "f" (src1), "f" (src2), "f" (src3) \
+                    : "$s0", "$f24"                      \
+                   )
+
+#define ASM_VOLATILE_FCMP(inst)                          \
+   __asm__ volatile("movfcsr2gr $s0, $r0         \n\t"   \
+                    "movgr2fcsr $r2, $zero       \n\t"   \
+                    #inst"      $fcc0, %1, %2    \n\t"   \
+                    "movfcsr2gr %0, $r0          \n\t"   \
+                    "movgr2fcsr $r0, $s0         \n\t"   \
+                    : "=r" (fcsr2)                       \
+                    : "f" (src1), "f" (src2)             \
+                    : "$s0", "$fcc0"                     \
+                   )
+#endif
+
+/* Calculate FCSR and return whether an exception needs to be thrown */
+ULong loongarch64_calculate_FCSR ( enum fpop op, ULong src1,
+                                   ULong src2, ULong src3 )
+{
+   UInt fcsr2 = 0;
+#if defined(__loongarch__)
+   switch (op) {
+      case FADD_S:
+         ASM_VOLATILE_BINARY(fadd.s);
+         break;
+      case FADD_D:
+         ASM_VOLATILE_BINARY(fadd.d);
+         break;
+      case FSUB_S:
+         ASM_VOLATILE_BINARY(fsub.s);
+         break;
+      case FSUB_D:
+         ASM_VOLATILE_BINARY(fsub.d);
+         break;
+      case FMUL_S:
+         ASM_VOLATILE_BINARY(fmul.s);
+         break;
+      case FMUL_D:
+         ASM_VOLATILE_BINARY(fmul.d);
+         break;
+      case FDIV_S:
+         ASM_VOLATILE_BINARY(fdiv.s);
+         break;
+      case FDIV_D:
+         ASM_VOLATILE_BINARY(fdiv.d);
+         break;
+      case FMADD_S:
+         ASM_VOLATILE_TRINARY(fmadd.s);
+         break;
+      case FMADD_D:
+         ASM_VOLATILE_TRINARY(fmadd.d);
+         break;
+      case FMSUB_S:
+         ASM_VOLATILE_TRINARY(fmsub.s);
+         break;
+      case FMSUB_D:
+         ASM_VOLATILE_TRINARY(fmsub.d);
+         break;
+      case FNMADD_S:
+         ASM_VOLATILE_TRINARY(fnmadd.s);
+         break;
+      case FNMADD_D:
+         ASM_VOLATILE_TRINARY(fnmadd.d);
+         break;
+      case FNMSUB_S:
+         ASM_VOLATILE_TRINARY(fnmsub.s);
+         break;
+      case FNMSUB_D:
+         ASM_VOLATILE_TRINARY(fnmsub.s);
+         break;
+      case FMAX_S:
+         ASM_VOLATILE_BINARY(fmax.s);
+         break;
+      case FMAX_D:
+         ASM_VOLATILE_BINARY(fmax.d);
+         break;
+      case FMIN_S:
+         ASM_VOLATILE_BINARY(fmin.s);
+         break;
+      case FMIN_D:
+         ASM_VOLATILE_BINARY(fmin.d);
+         break;
+      case FMAXA_S:
+         ASM_VOLATILE_BINARY(fmaxa.s);
+         break;
+      case FMAXA_D:
+         ASM_VOLATILE_BINARY(fmaxa.d);
+         break;
+      case FMINA_S:
+         ASM_VOLATILE_BINARY(fmina.s);
+         break;
+      case FMINA_D:
+         ASM_VOLATILE_BINARY(fmina.s);
+         break;
+      case FABS_S:
+         ASM_VOLATILE_UNARY(fabs.s);
+         break;
+      case FABS_D:
+         ASM_VOLATILE_UNARY(fabs.d);
+         break;
+      case FNEG_S:
+         ASM_VOLATILE_UNARY(fneg.s);
+         break;
+      case FNEG_D:
+         ASM_VOLATILE_UNARY(fneg.d);
+         break;
+      case FSQRT_S:
+         ASM_VOLATILE_UNARY(fsqrt.s);
+         break;
+      case FSQRT_D:
+         ASM_VOLATILE_UNARY(fsqrt.d);
+         break;
+      case FRECIP_S:
+         ASM_VOLATILE_UNARY(frecip.s);
+         break;
+      case FRECIP_D:
+         ASM_VOLATILE_UNARY(frecip.d);
+         break;
+      case FRSQRT_S:
+         ASM_VOLATILE_UNARY(frsqrt.s);
+         break;
+      case FRSQRT_D:
+         ASM_VOLATILE_UNARY(frsqrt.d);
+         break;
+      case FSCALEB_S:
+         ASM_VOLATILE_BINARY(fscaleb.s);
+         break;
+      case FSCALEB_D:
+         ASM_VOLATILE_BINARY(fscaleb.d);
+         break;
+      case FLOGB_S:
+         ASM_VOLATILE_UNARY(flogb.s);
+         break;
+      case FLOGB_D:
+         ASM_VOLATILE_UNARY(flogb.d);
+         break;
+      case FCMP_CAF_S:
+         ASM_VOLATILE_FCMP(fcmp.caf.s);
+         break;
+      case FCMP_CAF_D:
+         ASM_VOLATILE_FCMP(fcmp.caf.d);
+         break;
+      case FCMP_SAF_S:
+         ASM_VOLATILE_FCMP(fcmp.saf.s);
+         break;
+      case FCMP_SAF_D:
+         ASM_VOLATILE_FCMP(fcmp.saf.d);
+         break;
+      case FCMP_CLT_S:
+         ASM_VOLATILE_FCMP(fcmp.clt.s);
+         break;
+      case FCMP_CLT_D:
+         ASM_VOLATILE_FCMP(fcmp.clt.d);
+         break;
+      case FCMP_SLT_S:
+         ASM_VOLATILE_FCMP(fcmp.slt.s);
+         break;
+      case FCMP_SLT_D:
+         ASM_VOLATILE_FCMP(fcmp.slt.d);
+         break;
+      case FCMP_CEQ_S:
+         ASM_VOLATILE_FCMP(fcmp.ceq.s);
+         break;
+      case FCMP_CEQ_D:
+         ASM_VOLATILE_FCMP(fcmp.ceq.d);
+         break;
+      case FCMP_SEQ_S:
+         ASM_VOLATILE_FCMP(fcmp.seq.s);
+         break;
+      case FCMP_SEQ_D:
+         ASM_VOLATILE_FCMP(fcmp.seq.d);
+         break;
+      case FCMP_CLE_S:
+         ASM_VOLATILE_FCMP(fcmp.cle.s);
+         break;
+      case FCMP_CLE_D:
+         ASM_VOLATILE_FCMP(fcmp.cle.d);
+         break;
+      case FCMP_SLE_S:
+         ASM_VOLATILE_FCMP(fcmp.sle.s);
+         break;
+      case FCMP_SLE_D:
+         ASM_VOLATILE_FCMP(fcmp.sle.d);
+         break;
+      case FCMP_CUN_S:
+         ASM_VOLATILE_FCMP(fcmp.cun.s);
+         break;
+      case FCMP_CUN_D:
+         ASM_VOLATILE_FCMP(fcmp.cun.d);
+         break;
+      case FCMP_SUN_S:
+         ASM_VOLATILE_FCMP(fcmp.sun.s);
+         break;
+      case FCMP_SUN_D:
+         ASM_VOLATILE_FCMP(fcmp.sun.d);
+         break;
+      case FCMP_CULT_S:
+         ASM_VOLATILE_FCMP(fcmp.cult.s);
+         break;
+      case FCMP_CULT_D:
+         ASM_VOLATILE_FCMP(fcmp.cult.d);
+         break;
+      case FCMP_SULT_S:
+         ASM_VOLATILE_FCMP(fcmp.sult.s);
+         break;
+      case FCMP_SULT_D:
+         ASM_VOLATILE_FCMP(fcmp.sult.d);
+         break;
+      case FCMP_CUEQ_S:
+         ASM_VOLATILE_FCMP(fcmp.cueq.s);
+         break;
+      case FCMP_CUEQ_D:
+         ASM_VOLATILE_FCMP(fcmp.cueq.d);
+         break;
+      case FCMP_SUEQ_S:
+         ASM_VOLATILE_FCMP(fcmp.sueq.s);
+         break;
+      case FCMP_SUEQ_D:
+         ASM_VOLATILE_FCMP(fcmp.sueq.d);
+         break;
+      case FCMP_CULE_S:
+         ASM_VOLATILE_FCMP(fcmp.cule.s);
+         break;
+      case FCMP_CULE_D:
+         ASM_VOLATILE_FCMP(fcmp.cule.d);
+         break;
+      case FCMP_SULE_S:
+         ASM_VOLATILE_FCMP(fcmp.sule.s);
+         break;
+      case FCMP_SULE_D:
+         ASM_VOLATILE_FCMP(fcmp.sule.d);
+         break;
+      case FCMP_CNE_S:
+         ASM_VOLATILE_FCMP(fcmp.cne.s);
+         break;
+      case FCMP_CNE_D:
+         ASM_VOLATILE_FCMP(fcmp.cne.d);
+         break;
+      case FCMP_SNE_S:
+         ASM_VOLATILE_FCMP(fcmp.sne.s);
+         break;
+      case FCMP_SNE_D:
+         ASM_VOLATILE_FCMP(fcmp.sne.d);
+         break;
+      case FCMP_COR_S:
+         ASM_VOLATILE_FCMP(fcmp.cor.s);
+         break;
+      case FCMP_COR_D:
+         ASM_VOLATILE_FCMP(fcmp.cor.d);
+         break;
+      case FCMP_SOR_S:
+         ASM_VOLATILE_FCMP(fcmp.sor.s);
+         break;
+      case FCMP_SOR_D:
+         ASM_VOLATILE_FCMP(fcmp.sor.d);
+         break;
+      case FCMP_CUNE_S:
+         ASM_VOLATILE_FCMP(fcmp.cune.s);
+         break;
+      case FCMP_CUNE_D:
+         ASM_VOLATILE_FCMP(fcmp.cune.d);
+         break;
+      case FCMP_SUNE_S:
+         ASM_VOLATILE_FCMP(fcmp.sune.s);
+         break;
+      case FCMP_SUNE_D:
+         ASM_VOLATILE_FCMP(fcmp.sune.d);
+         break;
+      case FCVT_S_D:
+         ASM_VOLATILE_UNARY(fcvt.s.d);
+         break;
+      case FCVT_D_S:
+         ASM_VOLATILE_UNARY(fcvt.d.s);
+         break;
+      case FTINTRM_W_S:
+         ASM_VOLATILE_UNARY(ftintrm.w.s);
+         break;
+      case FTINTRM_W_D:
+         ASM_VOLATILE_UNARY(ftintrm.w.d);
+         break;
+      case FTINTRM_L_S:
+         ASM_VOLATILE_UNARY(ftintrm.l.s);
+         break;
+      case FTINTRM_L_D:
+         ASM_VOLATILE_UNARY(ftintrm.l.d);
+         break;
+      case FTINTRP_W_S:
+         ASM_VOLATILE_UNARY(ftintrp.w.s);
+         break;
+      case FTINTRP_W_D:
+         ASM_VOLATILE_UNARY(ftintrp.w.d);
+         break;
+      case FTINTRP_L_S:
+         ASM_VOLATILE_UNARY(ftintrp.l.s);
+         break;
+      case FTINTRP_L_D:
+         ASM_VOLATILE_UNARY(ftintrp.l.d);
+         break;
+      case FTINTRZ_W_S:
+         ASM_VOLATILE_UNARY(ftintrz.w.s);
+         break;
+      case FTINTRZ_W_D:
+         ASM_VOLATILE_UNARY(ftintrz.w.d);
+         break;
+      case FTINTRZ_L_S:
+         ASM_VOLATILE_UNARY(ftintrz.l.s);
+         break;
+      case FTINTRZ_L_D:
+         ASM_VOLATILE_UNARY(ftintrz.l.d);
+         break;
+      case FTINTRNE_W_S:
+         ASM_VOLATILE_UNARY(ftintrne.w.s);
+         break;
+      case FTINTRNE_W_D:
+         ASM_VOLATILE_UNARY(ftintrne.w.d);
+         break;
+      case FTINTRNE_L_S:
+         ASM_VOLATILE_UNARY(ftintrne.l.s);
+         break;
+      case FTINTRNE_L_D:
+         ASM_VOLATILE_UNARY(ftintrne.l.d);
+         break;
+      case FTINT_W_S:
+         ASM_VOLATILE_UNARY(ftint.w.s);
+         break;
+      case FTINT_W_D:
+         ASM_VOLATILE_UNARY(ftint.w.d);
+         break;
+      case FTINT_L_S:
+         ASM_VOLATILE_UNARY(ftint.l.s);
+         break;
+      case FTINT_L_D:
+         ASM_VOLATILE_UNARY(ftint.l.d);
+         break;
+      case FFINT_S_W:
+         ASM_VOLATILE_UNARY(ffint.s.w);
+         break;
+      case FFINT_D_W:
+         ASM_VOLATILE_UNARY(ffint.d.w);
+         break;
+      case FFINT_S_L:
+         ASM_VOLATILE_UNARY(ffint.s.l);
+         break;
+      case FFINT_D_L:
+         ASM_VOLATILE_UNARY(ffint.d.l);
+         break;
+      case FRINT_S:
+         ASM_VOLATILE_UNARY(frint.s);
+         break;
+      case FRINT_D:
+         ASM_VOLATILE_UNARY(frint.d);
+         break;
+      default:
+         break;
+   }
+#endif
+   return (ULong)fcsr2;
+}
+
 
 /*---------------------------------------------------------------*/
 /*--- end                         guest_loongarch64_helpers.c ---*/
