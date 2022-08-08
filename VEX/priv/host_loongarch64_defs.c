@@ -183,6 +183,185 @@ UInt ppHRegLOONGARCH64 ( HReg reg )
 }
 
 
+/* --------- Condition codes, LOONGARCH64 encoding. --------- */
+
+static inline const HChar* showLOONGARCH64CondCode ( LOONGARCH64CondCode cond )
+{
+   const HChar* ret;
+   switch (cond) {
+      case LAcc_EQ:
+         ret = "eq";  /* equal */
+         break;
+      case LAcc_NE:
+         ret = "ne";  /* not equal */
+         break;
+      case LAcc_LT:
+         ret = "lt";  /* less than (signed) */
+         break;
+      case LAcc_GE:
+         ret = "ge";  /* great equal (signed) */
+         break;
+      case LAcc_LTU:
+         ret = "ltu"; /* less than (unsigned) */
+         break;
+      case LAcc_GEU:
+         ret = "geu"; /* great equal (unsigned) */
+         break;
+      case LAcc_AL:
+         ret = "al";  /* always (unconditional) */
+         break;
+      default:
+         vpanic("showLOONGARCH64CondCode");
+         break;
+   }
+   return ret;
+}
+
+
+/* --------- Memory address expressions (amodes). --------- */
+
+LOONGARCH64AMode* LOONGARCH64AMode_RI ( HReg reg, UShort imm )
+{
+   LOONGARCH64AMode* am = LibVEX_Alloc_inline(sizeof(LOONGARCH64AMode));
+   am->tag = LAam_RI;
+   am->LAam.RI.base = reg;
+   am->LAam.RI.index = imm;
+   return am;
+}
+
+LOONGARCH64AMode* LOONGARCH64AMode_RR ( HReg base, HReg index )
+{
+   LOONGARCH64AMode* am = LibVEX_Alloc_inline(sizeof(LOONGARCH64AMode));
+   am->tag = LAam_RR;
+   am->LAam.RR.base = base;
+   am->LAam.RR.index = index;
+   return am;
+}
+
+static inline void ppLOONGARCH64AMode ( LOONGARCH64AMode* am )
+{
+   switch (am->tag) {
+      case LAam_RI:
+         ppHRegLOONGARCH64(am->LAam.RI.base);
+         vex_printf(", ");
+         vex_printf("%d", extend((UInt)am->LAam.RI.index, 12));
+         break;
+      case LAam_RR:
+         ppHRegLOONGARCH64(am->LAam.RR.base);
+         vex_printf(", ");
+         ppHRegLOONGARCH64(am->LAam.RR.index);
+         break;
+      default:
+         vpanic("ppLOONGARCH64AMode");
+         break;
+   }
+}
+
+static inline void addRegUsage_LOONGARCH64AMode( HRegUsage* u,
+                                                 LOONGARCH64AMode* am )
+{
+   switch (am->tag) {
+      case LAam_RI:
+         addHRegUse(u, HRmRead, am->LAam.RI.base);
+         break;
+      case LAam_RR:
+         addHRegUse(u, HRmRead, am->LAam.RR.base);
+         addHRegUse(u, HRmRead, am->LAam.RR.index);
+         break;
+      default:
+         vpanic("addRegUsage_LOONGARCH64AMode");
+         break;
+   }
+}
+
+static inline void mapRegs_LOONGARCH64AMode( HRegRemap* m,
+                                             LOONGARCH64AMode* am )
+{
+   switch (am->tag) {
+      case LAam_RI:
+         mapReg(m, &am->LAam.RI.base);
+         break;
+      case LAam_RR:
+         mapReg(m, &am->LAam.RR.base);
+         mapReg(m, &am->LAam.RR.index);
+         break;
+      default:
+         vpanic("mapRegs_LOONGARCH64AMode");
+         break;
+   }
+}
+
+
+/* --------- Operand, which can be reg or imm. --------- */
+
+LOONGARCH64RI* LOONGARCH64RI_R ( HReg reg )
+{
+   LOONGARCH64RI* op = LibVEX_Alloc_inline(sizeof(LOONGARCH64RI));
+   op->tag = LAri_Reg;
+   op->LAri.R.reg = reg;
+   return op;
+}
+
+LOONGARCH64RI* LOONGARCH64RI_I ( UShort imm, UChar size, Bool isSigned )
+{
+   LOONGARCH64RI* op = LibVEX_Alloc_inline(sizeof(LOONGARCH64RI));
+   op->tag = LAri_Imm;
+   op->LAri.I.imm = imm;
+   op->LAri.I.size = size;
+   op->LAri.I.isSigned = isSigned;
+   vassert(imm < (1 << size));
+   vassert(size == 5 || size == 6 || size == 12);
+   return op;
+}
+
+static inline void ppLOONGARCH64RI ( LOONGARCH64RI* ri )
+{
+   switch (ri->tag) {
+      case LAri_Reg:
+         ppHRegLOONGARCH64(ri->LAri.R.reg);
+         break;
+      case LAri_Imm:
+         if (ri->LAri.I.isSigned) {
+            vex_printf("%d", extend((UInt)ri->LAri.I.imm, ri->LAri.I.size));
+         } else {
+            vex_printf("%u", (UInt)ri->LAri.I.imm);
+         }
+         break;
+      default:
+         vpanic("ppLOONGARCH64RI");
+         break;
+   }
+}
+
+static inline void addRegUsage_LOONGARCH64RI( HRegUsage* u, LOONGARCH64RI* ri )
+{
+   switch (ri->tag) {
+      case LAri_Reg:
+         addHRegUse(u, HRmRead, ri->LAri.R.reg);
+         break;
+      case LAri_Imm:
+         break;
+      default:
+         vpanic("addRegUsage_LOONGARCH64RI");
+         break;
+   }
+}
+
+static inline void mapRegs_LOONGARCH64RI( HRegRemap* m, LOONGARCH64RI* ri )
+{
+   switch (ri->tag) {
+      case LAri_Reg:
+         mapReg(m, &ri->LAri.R.reg);
+         break;
+      case LAri_Imm:
+         break;
+      default:
+         vpanic("mapRegs_LOONGARCH64RI");
+         break;
+   }
+}
+
+
 /* -------- Pretty Print instructions ------------- */
 
 void ppLOONGARCH64Instr ( const LOONGARCH64Instr* i, Bool mode64 )
@@ -271,6 +450,198 @@ LOONGARCH64Instr* genMove_LOONGARCH64 ( HReg from, HReg to, Bool mode64 )
 
 
 /* --------- The loongarch64 assembler --------- */
+
+static inline UInt iregEnc ( HReg r )
+{
+   vassert(hregClass(r) == HRcInt64);
+   vassert(!hregIsVirtual(r));
+   UInt n = hregEncoding(r);
+   vassert(n < 32);
+   return n;
+}
+
+static inline UInt fregEnc ( HReg r )
+{
+   vassert(hregClass(r) == HRcFlt64);
+   vassert(!hregIsVirtual(r));
+   UInt n = hregEncoding(r);
+   vassert(n < 32);
+   return n;
+}
+
+static inline UInt fcsrEnc ( HReg r )
+{
+   vassert(hregClass(r) == HRcInt32);
+   vassert(!hregIsVirtual(r));
+   UInt n = hregEncoding(r);
+   vassert(n < 32);
+   return n;
+}
+
+static inline UInt emit_op_rj_rd ( UInt op, UInt rj, UInt rd )
+{
+   vassert(rj < (1 << 5));
+   vassert(rd < (1 << 5));
+   return op | (rj << 5) | rd;
+}
+
+static inline UInt emit_op_rk_rj_rd ( UInt op, UInt rk, UInt rj, UInt rd )
+{
+   vassert(rk < (1 << 5));
+   vassert(rj < (1 << 5));
+   vassert(rd < (1 << 5));
+   return op | (rk << 10) | (rj << 5) | rd;
+}
+
+static inline UInt emit_op_fj_fd ( UInt op, UInt fj, UInt fd )
+{
+   vassert(fj < (1 << 5));
+   vassert(fd < (1 << 5));
+   return op | (fj << 5) | fd;
+}
+
+static inline UInt emit_op_fa_fk_fj_fd ( UInt op, UInt fa, UInt fk, UInt fj, UInt fd )
+{
+   vassert(fa < (1 << 5));
+   vassert(fk < (1 << 5));
+   vassert(fj < (1 << 5));
+   vassert(fd < (1 << 5));
+   return op | (fa << 15) | (fk << 10) | (fj << 5) | fd;
+}
+
+static inline UInt emit_op_fk_fj_fd ( UInt op, UInt fk, UInt fj, UInt fd )
+{
+   vassert(fk < (1 << 5));
+   vassert(fj < (1 << 5));
+   vassert(fd < (1 << 5));
+   return op | (fk << 10) | (fj << 5) | fd;
+}
+
+static inline UInt emit_op_ca_fk_fj_fd ( UInt op, UInt ca, UInt fk, UInt fj, UInt fd )
+{
+   vassert(ca < (1 << 3));
+   vassert(fk < (1 << 5));
+   vassert(fj < (1 << 5));
+   vassert(fd < (1 << 5));
+   return op | (ca << 15) | (fk << 10) | (fj << 5) | fd;
+}
+
+static inline UInt emit_op_fk_fj_cd ( UInt op, UInt fk, UInt fj, UInt cd )
+{
+   vassert(fk < (1 << 5));
+   vassert(fj < (1 << 5));
+   vassert(cd < (1 << 3));
+   return op | (fk << 10) | (fj << 5) | cd;
+}
+
+static inline UInt emit_op_cj_rd ( UInt op, UInt cj, UInt rd )
+{
+   vassert(cj < (1 << 3));
+   vassert(rd < (1 << 5));
+   return op | (cj << 5) | rd;
+}
+
+static inline UInt emit_op_rj_cd ( UInt op, UInt rj, UInt cd )
+{
+   vassert(rj < (1 << 5));
+   vassert(cd < (1 << 3));
+   return op | (rj << 5) | cd;
+}
+
+static inline UInt emit_op_rj_fd ( UInt op, UInt rj, UInt fd )
+{
+   vassert(rj < (1 << 5));
+   vassert(fd < (1 << 5));
+   return op | (rj << 5) | fd;
+}
+
+static inline UInt emit_op_fj_rd ( UInt op, UInt fj, UInt rd )
+{
+   vassert(fj < (1 << 5));
+   vassert(rd < (1 << 5));
+   return op | (fj << 5) | rd;
+}
+
+static inline UInt emit_op_rj_fcsr ( UInt op, UInt rj, UInt fcsr )
+{
+   vassert(rj < (1 << 5));
+   vassert(fcsr < (1 << 5));
+   return op | (rj << 5) | fcsr;
+}
+
+static inline UInt emit_op_fcsr_rd ( UInt op, UInt fcsr, UInt rd )
+{
+   vassert(fcsr < (1 << 5));
+   vassert(rd < (1 << 5));
+   return op | (fcsr << 5) | rd;
+}
+
+static inline UInt emit_op_ui5_rj_rd ( UInt op, UInt ui5, UInt rj, UInt rd )
+{
+   vassert(ui5 < (1 << 5));
+   vassert(rj < (1 << 5));
+   vassert(rd < (1 << 5));
+   return op | (ui5 << 10) | (rj << 5) | rd;
+}
+
+static inline UInt emit_op_ui6_rj_rd ( UInt op, UInt ui6, UInt rj, UInt rd )
+{
+   vassert(ui6 < (1 << 6));
+   vassert(rj < (1 << 5));
+   vassert(rd < (1 << 5));
+   return op | (ui6 << 10) | (rj << 5) | rd;
+}
+
+static inline UInt emit_op_ui12_rj_rd ( UInt op, UInt ui12, UInt rj, UInt rd )
+{
+   vassert(ui12 < (1 << 12));
+   vassert(rj < (1 << 5));
+   vassert(rd < (1 << 5));
+   return op | (ui12 << 10) | (rj << 5) | rd;
+}
+
+static inline UInt emit_op_si12_rj_rd ( UInt op, UInt si12, UInt rj, UInt rd )
+{
+   vassert(si12 < (1 << 12));
+   vassert(rj < (1 << 5));
+   vassert(rd < (1 << 5));
+   return op | (si12 << 10) | (rj << 5) | rd;
+}
+
+static inline UInt emit_op_si14_rj_rd ( UInt op, UInt si14, UInt rj, UInt rd )
+{
+   vassert(si14 < (1 << 14));
+   vassert(rj < (1 << 5));
+   vassert(rd < (1 << 5));
+   return op | (si14 << 10) | (rj << 5) | rd;
+}
+
+static inline UInt emit_op_si20_rd ( UInt op, UInt si20, UInt rd )
+{
+   vassert(si20 < (1 << 20));
+   vassert(rd < (1 << 5));
+   return op | (si20 << 5) | rd;
+}
+
+static inline UInt emit_op_offs16_rj_rd ( UInt op, UInt offs16, UInt rj, UInt rd )
+{
+   vassert(offs16 < (1 << 16));
+   vassert(rj < (1 << 5));
+   vassert(rd < (1 << 5));
+   return op | (offs16 << 10) | (rj << 5) | rd;
+}
+
+static inline UInt emit_op_offs26 ( UInt op, UInt offs26 )
+{
+   vassert(offs26 < (1 << 26));
+   return op | ((offs26 & 0xffff) << 10) | (offs26 >> 16);
+}
+
+static inline UInt emit_op_hint15 ( UInt op, UInt hint )
+{
+   vassert(hint < (1 << 15));
+   return op | hint;
+}
 
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is

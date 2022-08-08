@@ -99,7 +99,277 @@ extern UInt ppHRegLOONGARCH64 ( HReg reg );
 #define LOONGARCH64_N_ARGREGS 8 /* a0 ... a7 */
 
 
+/* --------- Condition codes, LOONGARCH64 encoding. --------- */
+typedef enum {
+   LAcc_EQ  = 0, /* equal */
+   LAcc_NE  = 1, /* not equal */
+
+   LAcc_LT  = 2, /* less than (signed) */
+   LAcc_GE  = 3, /* great equal (signed) */
+
+   LAcc_LTU = 4, /* less than (unsigned) */
+   LAcc_GEU = 5, /* great equal (unsigned) */
+
+   LAcc_AL  = 6  /* always (unconditional) */
+} LOONGARCH64CondCode;
+
+
+/* --------- Memory address expressions (amodes). --------- */
+
+typedef enum {
+   LAam_RI, /* Reg + Imm (signed 12-bit or signed 14-bit) */
+   LAam_RR  /* Reg1 + Reg2 */
+} LOONGARCH64AModeTag;
+
+typedef struct {
+   LOONGARCH64AModeTag tag;
+   union {
+      struct {
+         HReg   base;
+         UShort index;
+      } RI;
+      struct {
+         HReg base;
+         HReg index;
+      } RR;
+   } LAam;
+} LOONGARCH64AMode;
+
+extern LOONGARCH64AMode* LOONGARCH64AMode_RI ( HReg reg, UShort imm );
+extern LOONGARCH64AMode* LOONGARCH64AMode_RR ( HReg base, HReg index );
+
+
+/* --------- Operand, which can be reg or imm. --------- */
+
+typedef enum {
+   LAri_Reg,
+   LAri_Imm
+} LOONGARCH64RITag;
+
+typedef struct {
+   LOONGARCH64RITag tag;
+   union {
+      struct {
+         HReg reg;
+      } R;
+      struct {
+         UShort imm;
+         UChar  size; // size == 5 || size == 6 || size == 12
+         Bool   isSigned;
+      } I;
+   } LAri;
+} LOONGARCH64RI;
+
+extern LOONGARCH64RI* LOONGARCH64RI_R ( HReg reg );
+extern LOONGARCH64RI* LOONGARCH64RI_I ( UShort imm, UChar size, Bool isSigned );
+
+
 /* --------- Instructions. --------- */
+
+/* Tags for unary operations */
+typedef enum {
+   LAun_CLZ_W     = 0x00001400,
+   LAun_CTZ_W     = 0x00001c00,
+   LAun_CLZ_D     = 0x00002400,
+   LAun_CTZ_D     = 0x00002c00,
+   LAun_EXT_W_H   = 0x00005800,
+   LAun_EXT_W_B   = 0x00005c00
+} LOONGARCH64UnOp;
+
+/* Tags for binary operations */
+typedef enum {
+   LAbin_ADD_W     = 0x00100000,
+   LAbin_ADD_D     = 0x00108000,
+   LAbin_SUB_W     = 0x00110000,
+   LAbin_SUB_D     = 0x00118000,
+   LAbin_NOR       = 0x00140000,
+   LAbin_AND       = 0x00148000,
+   LAbin_OR        = 0x00150000,
+   LAbin_XOR       = 0x00158000,
+   LAbin_SLL_W     = 0x00170000,
+   LAbin_SRL_W     = 0x00178000,
+   LAbin_SRA_W     = 0x00180000,
+   LAbin_SLL_D     = 0x00188000,
+   LAbin_SRL_D     = 0x00190000,
+   LAbin_SRA_D     = 0x00198000,
+   LAbin_MUL_W     = 0x001c0000,
+   LAbin_MUL_D     = 0x001d8000,
+   LAbin_MULH_W    = 0x001c8000,
+   LAbin_MULH_WU   = 0x001d0000,
+   LAbin_MULH_D    = 0x001e0000,
+   LAbin_MULH_DU   = 0x001e8000,
+   LAbin_MULW_D_W  = 0x001f0000,
+   LAbin_MULW_D_WU = 0x001f8000,
+   LAbin_DIV_W     = 0x00200000,
+   LAbin_MOD_W     = 0x00208000,
+   LAbin_DIV_WU    = 0x00210000,
+   LAbin_MOD_WU    = 0x00218000,
+   LAbin_DIV_D     = 0x00220000,
+   LAbin_MOD_D     = 0x00228000,
+   LAbin_DIV_DU    = 0x00230000,
+   LAbin_MOD_DU    = 0x00238000,
+   LAbin_SLLI_W    = 0x00408000,
+   LAbin_SLLI_D    = 0x00410000,
+   LAbin_SRLI_W    = 0x00448000,
+   LAbin_SRLI_D    = 0x00450000,
+   LAbin_SRAI_W    = 0x00488000,
+   LAbin_SRAI_D    = 0x00490000,
+   LAbin_ADDI_W    = 0x02800000,
+   LAbin_ADDI_D    = 0x02c00000,
+   LAbin_ANDI      = 0x03400000,
+   LAbin_ORI       = 0x03800000,
+   LAbin_XORI      = 0x03c00000
+} LOONGARCH64BinOp;
+
+/* Tags for load operations */
+typedef enum {
+   LAload_LD_W   = 0x28800000,
+   LAload_LD_D   = 0x28c00000,
+   LAload_LD_BU  = 0x2a000000,
+   LAload_LD_HU  = 0x2a400000,
+   LAload_LD_WU  = 0x2a800000,
+   LAload_LDX_D  = 0x380c0000,
+   LAload_LDX_BU = 0x38200000,
+   LAload_LDX_HU = 0x38240000,
+   LAload_LDX_WU = 0x38280000
+} LOONGARCH64LoadOp;
+
+/* Tags for store operations */
+typedef enum {
+   LAstore_ST_B  = 0x29000000,
+   LAstore_ST_H  = 0x29400000,
+   LAstore_ST_W  = 0x29800000,
+   LAstore_ST_D  = 0x29c00000,
+   LAstore_STX_B = 0x38100000,
+   LAstore_STX_H = 0x38140000,
+   LAstore_STX_W = 0x38180000,
+   LAstore_STX_D = 0x381c0000
+} LOONGARCH64StoreOp;
+
+/* Tags for ll/sc operations */
+typedef enum {
+   LAllsc_LL_W = 0x20000000,
+   LAllsc_SC_W = 0x21000000,
+   LAllsc_LL_D = 0x22000000,
+   LAllsc_SC_D = 0x23000000
+} LOONGARCH64LLSCOp;
+
+/* Tags for barrier operations */
+typedef enum {
+   LAbar_DBAR = 0x38720000,
+   LAbar_IBAR = 0x38728000
+} LOONGARCH64BarOp;
+
+/* Tags for floating point unary operations */
+typedef enum {
+   LAfpun_FABS_S    = 0x01140400,
+   LAfpun_FABS_D    = 0x01140800,
+   LAfpun_FNEG_S    = 0x01141400,
+   LAfpun_FNEG_D    = 0x01141800,
+   LAfpun_FLOGB_S   = 0x01142400,
+   LAfpun_FLOGB_D   = 0x01142800,
+   LAfpun_FSQRT_S   = 0x01144400,
+   LAfpun_FSQRT_D   = 0x01144800,
+   LAfpun_FRSQRT_S  = 0x01146400,
+   LAfpun_FRSQRT_D  = 0x01146800,
+   LAfpun_FCVT_S_D  = 0x01191800,
+   LAfpun_FCVT_D_S  = 0x01192400,
+   LAfpun_FTINT_W_S = 0x011b0400,
+   LAfpun_FTINT_W_D = 0x011b0800,
+   LAfpun_FTINT_L_S = 0x011b2400,
+   LAfpun_FTINT_L_D = 0x011b2800,
+   LAfpun_FFINT_S_W = 0x011d1000,
+   LAfpun_FFINT_S_L = 0x011d1800,
+   LAfpun_FFINT_D_W = 0x011d2000,
+   LAfpun_FFINT_D_L = 0x011d2800,
+   LAfpun_FRINT_S   = 0x011e4400,
+   LAfpun_FRINT_D   = 0x011e4800
+} LOONGARCH64FpUnOp;
+
+/* Tags for floating point binary operations */
+typedef enum {
+   LAfpbin_FADD_S    = 0x01008000,
+   LAfpbin_FADD_D    = 0x01010000,
+   LAfpbin_FSUB_S    = 0x01028000,
+   LAfpbin_FSUB_D    = 0x01030000,
+   LAfpbin_FMUL_S    = 0x01048000,
+   LAfpbin_FMUL_D    = 0x01050000,
+   LAfpbin_FDIV_S    = 0x01068000,
+   LAfpbin_FDIV_D    = 0x01070000,
+   LAfpbin_FMAX_S    = 0x01088000,
+   LAfpbin_FMAX_D    = 0x01090000,
+   LAfpbin_FMIN_S    = 0x010a8000,
+   LAfpbin_FMIN_D    = 0x010b0000,
+   LAfpbin_FMAXA_S   = 0x010c8000,
+   LAfpbin_FMAXA_D   = 0x010d0000,
+   LAfpbin_FMINA_S   = 0x010e8000,
+   LAfpbin_FMINA_D   = 0x010f0000,
+   LAfpbin_FSCALEB_S = 0x01108000,
+   LAfpbin_FSCALEB_D = 0x01110000
+} LOONGARCH64FpBinOp;
+
+/* Tags for floating point trinary operations */
+typedef enum {
+   LAfpbin_FMADD_S = 0x08100000,
+   LAfpbin_FMADD_D = 0x08200000,
+   LAfpbin_FMSUB_S = 0x08500000,
+   LAfpbin_FMSUB_D = 0x08600000
+} LOONGARCH64FpTriOp;
+
+/* Tags for floating point load operations */
+typedef enum {
+   LAfpload_FLD_S  = 0x2b000000,
+   LAfpload_FLD_D  = 0x2b800000,
+   LAfpload_FLDX_S = 0x38300000,
+   LAfpload_FLDX_D = 0x38340000
+} LOONGARCH64FpLoadOp;
+
+/* Tags for floating point store operations */
+typedef enum {
+   LAfpstore_FST_S  = 0x2b400000,
+   LAfpstore_FST_D  = 0x2bc00000,
+   LAfpstore_FSTX_S = 0x38380000,
+   LAfpstore_FSTX_D = 0x383c0000
+} LOONGARCH64FpStoreOp;
+
+/* Tags for floating point move operations */
+typedef enum {
+   LAfpmove_FMOV_S     = 0x01149400,
+   LAfpmove_FMOV_D     = 0x01149800,
+   LAfpmove_MOVGR2FR_W = 0x0114a400,
+   LAfpmove_MOVGR2FR_D = 0x0114a800,
+   LAfpmove_MOVFR2GR_S = 0x0114b400,
+   LAfpmove_MOVFR2GR_D = 0x0114b800,
+   LAfpmove_MOVGR2FCSR = 0x0114c000,
+   LAfpmove_MOVFCSR2GR = 0x0114c800
+} LOONGARCH64FpMoveOp;
+
+/* Tags for floating point compare operations */
+typedef enum {
+   LAfpcmp_FCMP_CLT_S = 0x0c110000,
+   LAfpcmp_FCMP_CLT_D = 0x0c210000,
+   LAfpcmp_FCMP_CEQ_S = 0x0c120000,
+   LAfpcmp_FCMP_CEQ_D = 0x0c220000,
+   LAfpcmp_FCMP_CUN_S = 0x0c140000,
+   LAfpcmp_FCMP_CUN_D = 0x0c240000
+} LOONGARCH64FpCmpOp;
+
+/* Tags for extra operations, we only use them when emiting code directly */
+typedef enum {
+   LAextra_MOVCF2GR = 0x0114dc00,
+   LAextra_SLT      = 0x00120000,
+   LAextra_SLTU     = 0x00128000,
+   LAextra_SLTI     = 0x02000000,
+   LAextra_SLTUI    = 0x02400000,
+   LAextra_LU52I_D  = 0x03000000,
+   LAextra_LU12I_W  = 0x14000000,
+   LAextra_LU32I_D  = 0x16000000,
+   LAextra_JIRL     = 0x4c000000,
+   LAextra_B        = 0x50000000,
+   LAextra_BEQ      = 0x58000000,
+   LAextra_BNE      = 0x5c000000,
+   LAextra_BGE      = 0x64000000
+} LOONGARCH64ExtraOp;
 
 /* Tags for instructions */
 typedef enum {
