@@ -2452,7 +2452,7 @@ static void iselStmtExit ( ISelEnv* env, IRStmt* stmt )
    LOONGARCH64AMode* am = mkLOONGARCH64AMode_RI(hregGSP(), stmt->Ist.Exit.offsIP);
 
    /* Case: boring transfer to known address */
-   if (stmt->Ist.Exit.jk == Ijk_Boring) {
+   if (stmt->Ist.Exit.jk == Ijk_Boring || stmt->Ist.Exit.jk == Ijk_Call) {
       if (env->chainingAllowed) {
          /* .. almost always true .. */
          /* Skip the event check at the dst if this is a forwards edge. */
@@ -2591,7 +2591,7 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk, Int offsIP )
    if (next->tag == Iex_Const) {
       IRConst* cdst = next->Iex.Const.con;
       vassert(cdst->tag == Ico_U64);
-      if (jk == Ijk_Boring) {
+      if (jk == Ijk_Boring || jk == Ijk_Call) {
          /* Boring transfer to known address */
          LOONGARCH64AMode* am = mkLOONGARCH64AMode_RI(hregGSP(), offsIP);
          if (env->chainingAllowed) {
@@ -2611,9 +2611,11 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk, Int offsIP )
       }
    }
 
-   /* Case: boring transfer to any address */
+   /* Case: call/return (==boring) transfer to any address */
    switch (jk) {
-      case Ijk_Boring: {
+      case Ijk_Boring:
+      case Ijk_Ret:
+      case Ijk_Call:  {
          HReg dst = iselIntExpr_R(env, next);
          LOONGARCH64AMode* am = mkLOONGARCH64AMode_RI(hregGSP(), offsIP);
          if (env->chainingAllowed) {
