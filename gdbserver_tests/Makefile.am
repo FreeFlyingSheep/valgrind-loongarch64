@@ -16,6 +16,7 @@ dist_noinst_SCRIPTS = \
 	filter_make_empty \
 	filter_helgrind_monitor \
 	filter_helgrind_monitor_solaris \
+	filter_helgrind_monitor_loongarch64 \
 	filter_passsigalrm \
 	send_signal
 

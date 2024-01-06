@@ -1,0 +1,3 @@
+prereq: ../../../tests/loongarch64_features lasx
+prog: vector256
+vgopts: -q

@@ -5798,6 +5798,7 @@ AC_CONFIG_FILES([
    memcheck/tests/arm64-linux/Makefile
    memcheck/tests/x86-linux/Makefile
    memcheck/tests/riscv64-linux/Makefile
+   memcheck/tests/loongarch64-linux/Makefile
    memcheck/tests/amd64-solaris/Makefile
    memcheck/tests/x86-solaris/Makefile
    memcheck/tests/amd64-freebsd/Makefile
@@ -5847,6 +5848,7 @@ AC_CONFIG_FILES([
    none/tests/mips64/Makefile
    none/tests/nanomips/Makefile
    none/tests/riscv64/Makefile
+   none/tests/loongarch64/Makefile
    none/tests/linux/Makefile
    none/tests/darwin/Makefile
    none/tests/solaris/Makefile
