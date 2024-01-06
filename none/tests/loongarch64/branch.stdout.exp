@@ -1,0 +1,64 @@
+beq::
+input: 0x1 0x2
+output: 0
+beq::
+input: 0x1 0x1
+output: 1
+bne::
+input: 0x1 0x2
+output: 1
+bne::
+input: 0x1 0x1
+output: 0
+blt::
+input: 0x1 0x2
+output: 1
+blt::
+input: 0x1 0
+output: 0
+bge::
+input: 0x1 0x2
+output: 0
+bge::
+input: 0 0
+output: 1
+bltu::
+input: 0xffffffffffffffff 0x2
+output: 0
+bltu::
+input: 0 0x1
+output: 1
+bgeu::
+input: 0xffffffffffffffff 0x2
+output: 1
+bgeu::
+input: 0 0x1
+output: 0
+beqz::
+input: 0
+output: 1
+beqz::
+input: 0xffffffffffffffff
+output: 0
+bnez::
+input: 0
+output: 0
+bnez::
+input: 0xffffffffffffffff
+output: 1
+bceqz::
+input: 0
+output: 1
+bceqz::
+input: 0x1
+output: 0
+bcnez::
+input: 0
+output: 0
+bcnez::
+input: 0x1
+output: 1
+bl::
+res: 2
+jirl::
+res: 1
