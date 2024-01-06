@@ -35,10 +35,14 @@ endif
 if VGCONF_ARCHS_INCLUDE_NANOMIPS
 SUBDIRS += nanomips
 endif
+
 if VGCONF_ARCHS_INCLUDE_RISCV64
 SUBDIRS += riscv64
 endif
 
+if VGCONF_ARCHS_INCLUDE_LOONGARCH64
+SUBDIRS += loongarch64
+endif
 
 # OS-specific tests
 if VGCONF_OS_IS_LINUX
@@ -78,8 +82,8 @@ SUBDIRS += x86-freebsd
 endif
 
 DIST_SUBDIRS = x86 amd64 ppc32 ppc64 arm arm64 s390x s390x/disasm-test \
-               mips32 mips64 nanomips \
-               riscv64 linux darwin solaris freebsd amd64-linux x86-linux \
+               mips32 mips64 nanomips riscv64 loongarch64 \
+               linux darwin solaris freebsd amd64-linux x86-linux \
                amd64-darwin x86-darwin amd64-solaris x86-solaris x86-freebsd \
                scripts .
 

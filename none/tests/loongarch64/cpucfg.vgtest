@@ -1,0 +1,3 @@
+prereq: ../../../tests/loongarch64_features cpucfg
+prog: cpucfg
+vgopts: -q
