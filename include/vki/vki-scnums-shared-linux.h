@@ -56,6 +56,8 @@
 
 #define __NR_memfd_secret		447
 
+#define __NR_futex_waitv   449
+
 #define __NR_cachestat		451
 #define __NR_fchmodat2		452
 #define __NR_statmount		457
